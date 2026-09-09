@@ -1,0 +1,290 @@
+# BusinessTime.Activities
+
+Custom UiPath activities for arithmetic that respects working hours.
+
+Adding "8 hours" to a timestamp with `DateTime.AddHours` gives you Saturday. This package gives you Monday
+afternoon, because it knows when the office is open:
+
+> On a Monday-Friday 09:00-17:00 calendar, **Friday 14:00 + 8 business hours = Monday 14:00** — three hours
+> are spent on Friday afternoon and the remaining five on Monday morning.
+
+The working week, its holidays and its exceptions are described once, in one place, and every activity reads
+that same definition.
+
+---
+
+## Contents
+
+- [Describing working time](#describing-working-time)
+  - [The schedule string](#the-schedule-string)
+  - [Holidays, shutdowns and half days](#holidays-shutdowns-and-half-days)
+  - [Calendar files](#calendar-files)
+- [Activities](#activities)
+- [How an activity finds its calendar](#how-an-activity-finds-its-calendar)
+- [Worked examples](#worked-examples)
+- [Rules the engine follows](#rules-the-engine-follows)
+- [Building and installing](#building-and-installing)
+- [Using the engine outside UiPath](#using-the-engine-outside-uipath)
+
+---
+
+## Describing working time
+
+Everything starts with a **business calendar**: a working week, a list of exceptions to it, a time zone, and
+the length of a nominal business day.
+
+### The schedule string
+
+The working week is written as one line, which is what the activities, the JSON files and the API all accept:
+
+```
+Mon-Fri 09:00-17:00
+Mon-Thu 08:00-16:30; Fri 08:00-14:00
+Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00; Sun off
+Weekdays 9am-5pm
+Daily 00:00-24:00
+Mon-Fri 22:00-06:00
+```
+
+The rules are deliberately few:
+
+| Part | Accepted forms |
+| --- | --- |
+| Entry separator | `;`, `|`, or a line break |
+| Days | `Mon`, `Monday`, `Mon-Fri`, `Mon,Wed,Fri`, `Weekdays`, `Weekend`, `Daily` / `All` |
+| Day / hours separator | a space, or `:` |
+| Hours | `09:00-17:00`, `9-17`, `9am-5:30pm`, `00:00-24:00` |
+| Several windows in a day | comma-separated: `09:00-12:00,13:00-17:00` |
+| A day off | `off`, `closed`, `none`, or simply never mentioning the day |
+
+Two conveniences worth knowing:
+
+- **Night shifts.** A window that runs backwards crosses midnight, so `22:00-06:00` is eight hours ending the
+  next morning. Say `Mon-Fri 22:00-06:00` and Saturday morning is correctly counted as Friday's shift.
+- **Last entry wins.** `Mon-Fri 09:00-17:00; Wed 09:00-12:00` gives short Wednesdays, which keeps a schedule
+  readable instead of having to spell out every day.
+
+### Holidays, shutdowns and half days
+
+Four kinds of exception cover what businesses actually do:
+
+| Kind | Meaning |
+| --- | --- |
+| Holiday | A single date nobody works |
+| Annual holiday | A date that repeats every year, such as 1 January |
+| Shutdown | A run of dates, such as the week between Christmas and New Year |
+| Special hours | A date that *is* worked, but not on the usual hours — a half day, or an exceptional working Saturday |
+
+Where two exceptions cover the same date, the one added last wins, so a skeleton-crew day can be carved out
+of a shutdown.
+
+### Calendar files
+
+A calendar can live in a JSON file that several processes share and that the business can edit without anyone
+republishing a package:
+
+```json
+{
+  "name": "Germany - support desk",
+  "timeZone": "Europe/Berlin",
+  "hoursPerBusinessDay": 8,
+  "week": "Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00",
+  "specialDays": [
+    { "date": "01-01", "name": "New Year's Day", "annual": true },
+    { "date": "2026-12-24", "name": "Christmas Eve", "hours": "09:00-13:00" },
+    { "from": "2026-12-27", "to": "2026-12-31", "name": "Winter shutdown" }
+  ]
+}
+```
+
+`week` also accepts an object keyed by day name, when that reads better for a hand-maintained file:
+
+```json
+"week": {
+  "monday": "09:00-17:00",
+  "tuesday": ["09:00-12:00", "13:00-17:00"],
+  "saturday": "off"
+}
+```
+
+A full example is in [`samples/support-desk-calendar.json`](samples/support-desk-calendar.json).
+
+---
+
+## Activities
+
+All of them appear in the Studio panel under **Business Time**.
+
+### Building calendars
+
+| Activity | What it does |
+| --- | --- |
+| **Create Business Calendar** | Builds a calendar from a schedule string, a time zone and lists of holidays. |
+| **Load Business Calendar** | Reads a calendar from a JSON file or from JSON text (an Orchestrator asset, say). |
+| **Save Business Calendar** | Writes a calendar back out to JSON. |
+| **Business Calendar Scope** | Makes one calendar the default for every Business Time activity inside it. |
+
+### Calculating
+
+| Activity | Result | Also reports |
+| --- | --- | --- |
+| **Add Business Time** | `DateTime` | `ElapsedTime` — the wall clock time that passed, closed hours included |
+| **Subtract Business Time** | `DateTime` | `ElapsedTime` |
+| **Get Business Time Between** | `TimeSpan` | `BusinessDays`, `BusinessHours`, `WorkingDays` |
+| **Count Business Days** | `Int32` | |
+| **Is Business Time** | `Boolean` | `IsWorkingDay`, `SpecialDayName` |
+| **Get Business Day Info** | `Boolean` (is it worked) | `DayStart`, `DayEnd`, `WorkingTime`, `Shifts`, `SpecialDayName` |
+| **Snap To Business Time** | `DateTime` | `WasAdjusted` |
+| **Get Working Intervals** | `IList<BusinessTimeInterval>` | `TotalWorkingTime` |
+
+**Add Business Time** and **Subtract Business Time** take `Days`, `Hours`, `Minutes` and `Duration` together
+and add them up, so "one day and a half" needs no arithmetic beforehand. The `Day handling` property decides
+what a *day* means:
+
+- `AsWorkingHours` (the default) — a day is the calendar's hours per business day, and fractions are allowed.
+  Friday 14:00 + 1 day is Monday 14:00.
+- `AsWholeDays` — a day is a whole day on the calendar. The clock time is carried over untouched and only
+  non-working days are skipped, which is what a deadline of "three business days" usually means.
+
+---
+
+## How an activity finds its calendar
+
+Every calculating activity looks in this order, and stops at the first that is set:
+
+1. its own **Calendar** property;
+2. the nearest surrounding **Business Calendar Scope**;
+3. its own **Schedule** property, a schedule string for a quick calculation that needs no holidays;
+4. failing all of that, Monday-Friday 09:00-17:00 in the robot's own time zone.
+
+In practice: load the calendar once at the start of the process, wrap the work in a scope, and leave the
+`Calendar` property of everything inside it empty.
+
+---
+
+## Worked examples
+
+### A service level that ignores the weekend
+
+A ticket arrives Friday at 16:30 and must be answered within four business hours, on a Monday-Friday
+09:00-17:00 calendar.
+
+1. **Load Business Calendar** → `FilePath: "Data\calendar.json"` → `calendar`
+2. **Add Business Time** → `Date: ticket.Created`, `Hours: 4` → `dueAt`
+
+The office closes at 17:00, so half an hour is spent on Friday and the remaining three and a half on Monday
+morning: `dueAt` is Monday 12:30, not Friday 20:30.
+
+On the [sample calendar](samples/support-desk-calendar.json), which opens on Saturday mornings, the same
+ticket is due Saturday at 12:30 instead — which is the point of keeping the working week in one shared file
+rather than in the workflow.
+
+### Was the answer late?
+
+**Get Business Time Between** → `From: ticket.Created`, `To: ticket.Answered`
+
+The `Result` is the working time the team actually had. A weekend in the middle costs nothing, and
+`BusinessHours` gives the same figure as a number for a report.
+
+### Start a countdown only once the office is open
+
+A request arriving on Sunday should be treated as arriving on Monday morning.
+
+**Snap To Business Time** → `Date: request.Received`, `Direction: Forward`
+
+`WasAdjusted` tells you whether it landed out of hours, which is often worth logging.
+
+### When did this have to start?
+
+A task needs six business hours and is due Wednesday at 11:00.
+
+**Subtract Business Time** → `Date: dueAt`, `Hours: 6` → the latest possible start.
+
+### One calendar for a whole process
+
+Wrap the work in a **Business Calendar Scope** with `Calendar: calendar`, and leave the `Calendar` property
+of every activity inside it empty. Any single activity that needs different hours can still set its own.
+
+---
+
+## Rules the engine follows
+
+Worth knowing, because these are the cases where implementations usually disagree:
+
+- **Windows are half-open.** The instant a shift ends is not working time, so 17:00 on a 09:00-17:00 day is
+  outside hours. Consequently 09:00 + 8 hours reports 17:00 — the moment work stopped — rather than jumping
+  to the next morning. One minute more rolls over to 09:01 the next day.
+- **Starting out of hours is fine.** The clock simply starts running at the next working moment, so a
+  calculation from Sunday behaves the same as one from Monday 09:00.
+- **Adding zero changes nothing**, even out of hours. Use **Snap To Business Time** when you want a moment
+  moved onto the calendar.
+- **Subtraction is the exact inverse of addition.** Add a duration and subtract it again and you are back
+  where you started.
+- **Durations are wall clock.** A working day keeps its nominal length across a daylight-saving change: the
+  clocks move, the shift does not.
+- **Time zones.** A calendar carries the zone its hours are written in. A `DateTime` marked UTC is converted
+  into that zone, calculated there, and handed back as UTC; one with no kind is taken to be office-local
+  already, which is the usual case in a workflow.
+- **Calendars are immutable and thread-safe**, so one calendar can be shared across parallel branches.
+- **A calendar with no working time fails loudly** rather than looping forever, and says which calendar it was.
+
+---
+
+## Building and installing
+
+```bash
+dotnet build BusinessTime.Activities.sln -c Release
+dotnet test  BusinessTime.Activities.sln -c Release
+dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
+```
+
+`artifacts/BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+projects and `net6.0` for Windows and cross-platform ones, and the engine travels inside it, so this one file
+is all Studio needs.
+
+To install it:
+
+1. Copy the `.nupkg` into a folder — a network share works well for a team.
+2. In Studio, **Manage Packages → Settings**, add that folder as a user-defined package source.
+3. Find **BusinessTime.Activities** under that source and install it.
+
+To publish it to Orchestrator instead, upload the same file to a tenant feed.
+
+---
+
+## Using the engine outside UiPath
+
+`BusinessTime.Core` has no dependency on the workflow runtime, so the same rules can be used from any .NET
+code — a test harness, an API, a console tool:
+
+```csharp
+BusinessCalendar calendar = BusinessCalendar.Create()
+    .WithName("Support desk")
+    .WithSchedule("Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00")
+    .WithTimeZone("Europe/Berlin")
+    .AddAnnualHoliday(1, 1, "New Year's Day")
+    .AddShutdown(new DateTime(2026, 12, 27), new DateTime(2026, 12, 31), "Winter shutdown")
+    .Build();
+
+DateTime dueAt   = calendar.Add(ticketCreated, TimeSpan.FromHours(4));
+TimeSpan handled = calendar.GetBusinessTimeBetween(ticketCreated, ticketAnswered);
+bool openNow     = calendar.IsWorkingTime(DateTime.Now);
+```
+
+The main entry points are `Add`, `Subtract`, `AddBusinessDays`, `AddBusinessHours`, `AddWorkingDays`,
+`GetBusinessTimeBetween`, `GetBusinessDaysBetween`, `CountWorkingDays`, `SnapForward`, `SnapBackward`,
+`GetWorkingIntervals`, `IsWorkingTime`, `IsWorkingDay` and `GetShifts`, plus `BusinessCalendarSerializer`
+for the JSON format.
+
+---
+
+## Repository layout
+
+```
+src/BusinessTime.Core          the calendar model and the calculation engine
+src/BusinessTime.Activities    the UiPath activities
+tests/BusinessTime.Core.Tests  engine tests
+tests/BusinessTime.Activities.Tests
+                               activity tests, run through the real workflow runtime
+samples/                       an example calendar file
+```

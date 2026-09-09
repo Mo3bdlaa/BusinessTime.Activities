@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;net6.0</TargetFrameworks>
+    <RootNamespace>BusinessTime.Activities</RootNamespace>
+    <AssemblyName>BusinessTime.Activities</AssemblyName>
+    <PackageId>BusinessTime.Activities</PackageId>
+    <Title>Business Time Activities</Title>
+    <Description>UiPath activities for working-hours arithmetic: add and subtract business days and hours, measure business time between two moments, and describe a working week, its holidays and its exceptions in one shared calendar.</Description>
+    <PackageTags>UiPath;RPA;activities;business-days;working-hours;calendar;sla</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BusinessTime.Core\BusinessTime.Core.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.Activities" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <!--
+      The embedded engine reads calendar files with System.Text.Json. .NET 6 carries it in the shared
+      framework, but a Windows-legacy project has to be told to bring it along.
+    -->
+    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="UiPath.Workflow" Version="6.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!--
+    The engine travels inside this package rather than as a separate dependency, so that installing one
+    .nupkg into Studio or Orchestrator is enough to get a working activity pack.
+  -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessTimeCore</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+
+  <Target Name="IncludeBusinessTimeCore">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)BusinessTime.Core.dll" />
+      <BuildOutputInPackage Include="$(OutputPath)BusinessTime.Core.xml" Condition="Exists('$(OutputPath)BusinessTime.Core.xml')" />
+    </ItemGroup>
+  </Target>
+
+</Project>
