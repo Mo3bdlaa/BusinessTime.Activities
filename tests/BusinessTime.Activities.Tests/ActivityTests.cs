@@ -210,6 +210,41 @@ namespace BusinessTime.Activities.Tests
         }
 
         [Fact]
+        public void GetNextBusinessDayReportsWhenWorkStarts()
+        {
+            BusinessCalendar calendar = NineToFive.ToBuilder()
+                .AddHoliday(Monday.AddDays(7), "Company day")
+                .Build();
+
+            var activity = new GetNextBusinessDay
+            {
+                Calendar = WorkflowHarness.Arg(calendar),
+                Date = WorkflowHarness.Arg(Friday.AddHours(14))
+            };
+
+            IDictionary<string, object> outputs = WorkflowHarness.Run(activity);
+
+            // Monday is closed, so the answer is Tuesday at 09:00 rather than midnight.
+            Assert.Equal(Monday.AddDays(8).AddHours(9), outputs["Result"]);
+            Assert.Equal(Monday.AddDays(8).AddHours(17), outputs["DayEnd"]);
+            Assert.Equal(TimeSpan.FromHours(8), outputs["WorkingTime"]);
+            Assert.Equal(string.Empty, outputs["SpecialDayName"]);
+        }
+
+        [Fact]
+        public void GetNextBusinessDayCanLookBackwards()
+        {
+            var activity = new GetNextBusinessDay
+            {
+                Calendar = WorkflowHarness.Arg(NineToFive),
+                Date = WorkflowHarness.Arg(Monday.AddDays(7).AddHours(10)),
+                Direction = DayDirection.Previous
+            };
+
+            Assert.Equal(Friday.AddHours(9), WorkflowHarness.RunFor(activity));
+        }
+
+        [Fact]
         public void GetWorkingIntervalsListsTheOpenWindows()
         {
             var activity = new GetWorkingIntervals

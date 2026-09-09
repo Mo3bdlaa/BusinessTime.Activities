@@ -282,6 +282,71 @@ namespace BusinessTime.Tests
         }
 
         [Fact]
+        public void TheNextWorkingDayStartsWhenWorkStarts()
+        {
+            // Not midnight: the answer is the moment work actually begins on that day.
+            Assert.Equal(Monday.AddDays(7).AddHours(9), NineToFive.NextWorkingDay(Friday.AddHours(14)));
+            Assert.Equal(Monday.AddDays(1).AddHours(9), NineToFive.NextWorkingDay(Monday.AddHours(23)));
+        }
+
+        [Fact]
+        public void ThePreviousWorkingDayStartsWhenWorkStarts()
+        {
+            Assert.Equal(Friday.AddDays(-7).AddHours(9), NineToFive.PreviousWorkingDay(Monday.AddHours(14)));
+        }
+
+        [Fact]
+        public void DayNavigationSkipsHolidaysAndUsesTheDaysOwnHours()
+        {
+            BusinessCalendar calendar = BusinessCalendar.Create()
+                .WithSchedule("Mon-Fri 09:00-17:00")
+                .WithTimeZone(TimeZoneInfo.Utc)
+                .AddHoliday(Monday.AddDays(7), "Company day")
+                .AddSpecialHours(Monday.AddDays(8), "11:00-15:00", "Late start")
+                .Build();
+
+            // Monday is closed, so the next working day is Tuesday, and it opens at its own exceptional hour.
+            Assert.Equal(Monday.AddDays(8).AddHours(11), calendar.NextWorkingDay(Friday.AddHours(14)));
+        }
+
+        [Fact]
+        public void DayNavigationFollowsANightShiftStart()
+        {
+            BusinessCalendar calendar = BusinessCalendar.Create()
+                .WithSchedule("Mon-Fri 22:00-06:00")
+                .WithTimeZone(TimeZoneInfo.Utc)
+                .Build();
+
+            Assert.Equal(Monday.AddDays(1).AddHours(22), calendar.NextWorkingDay(Monday.AddHours(23)));
+        }
+
+        [Fact]
+        public void BusinessHoursCanBeAddedDirectly()
+        {
+            Assert.Equal(Monday.AddHours(11.5), NineToFive.AddBusinessHours(Monday.AddHours(9), 2.5));
+            Assert.Equal(Monday.AddHours(9), NineToFive.AddBusinessHours(Monday.AddHours(11.5), -2.5));
+        }
+
+        [Fact]
+        public void DescribingACalendarNamesWhatMatters()
+        {
+            BusinessCalendar calendar = BusinessCalendar.Create()
+                .WithName("Support desk")
+                .WithSchedule("Mon-Fri 09:00-17:00")
+                .WithTimeZone(TimeZoneInfo.Utc)
+                .AddHoliday(Monday, "Company day")
+                .Build();
+
+            string description = calendar.Describe();
+
+            Assert.Contains("Support desk", description);
+            Assert.Contains("Mon-Fri 09:00-17:00", description);
+            Assert.Contains("UTC", description);
+            Assert.Contains("8h", description);
+            Assert.Contains("specialDays=1", description);
+        }
+
+        [Fact]
         public void LongDurationsAreHandledWithoutDrifting()
         {
             BusinessCalendar calendar = NineToFive;
