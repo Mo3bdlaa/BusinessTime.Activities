@@ -135,6 +135,7 @@ All of them appear in the Studio panel under **Business Time**.
 | **Is Business Time** | `Boolean` | `IsWorkingDay`, `SpecialDayName` |
 | **Get Business Day Info** | `Boolean` (is it worked) | `DayStart`, `DayEnd`, `WorkingTime`, `Shifts`, `SpecialDayName` |
 | **Snap To Business Time** | `DateTime` | `WasAdjusted` |
+| **Get Next Business Day** | `DateTime` | `DayEnd`, `WorkingTime`, `SpecialDayName` |
 | **Get Working Intervals** | `IList<BusinessTimeInterval>` | `TotalWorkingTime` |
 
 **Add Business Time** and **Subtract Business Time** take `Days`, `Hours`, `Minutes` and `Duration` together
@@ -194,6 +195,13 @@ A request arriving on Sunday should be treated as arriving on Monday morning.
 
 `WasAdjusted` tells you whether it landed out of hours, which is often worth logging.
 
+### Schedule a retry for the next working day
+
+**Get Next Business Day** → `Date: DateTime.Now` → the moment work next starts.
+
+The answer is when the office actually opens, not midnight, and it follows that day's own hours — so a day
+with exceptional hours opens when those hours say it does. `Direction: Previous` looks the other way.
+
 ### When did this have to start?
 
 A task needs six business hours and is due Wednesday at 11:00.
@@ -216,6 +224,8 @@ Worth knowing, because these are the cases where implementations usually disagre
   to the next morning. One minute more rolls over to 09:01 the next day.
 - **Starting out of hours is fine.** The clock simply starts running at the next working moment, so a
   calculation from Sunday behaves the same as one from Monday 09:00.
+- **Day navigation lands on the start of business.** **Get Next Business Day** returns the moment work
+  begins on that day, never midnight, so it can be used directly as a start time.
 - **Adding zero changes nothing**, even out of hours. Use **Snap To Business Time** when you want a moment
   moved onto the calendar.
 - **Subtraction is the exact inverse of addition.** Add a duration and subtract it again and you are back

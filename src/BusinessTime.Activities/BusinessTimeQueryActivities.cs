@@ -16,6 +16,16 @@ namespace BusinessTime.Activities
         Backward = 1
     }
 
+    /// <summary>Which way <see cref="GetNextBusinessDay"/> looks for a working day.</summary>
+    public enum DayDirection
+    {
+        /// <summary>Look forward, to the next working day.</summary>
+        Next = 0,
+
+        /// <summary>Look backward, to the previous working day.</summary>
+        Previous = 1
+    }
+
     /// <summary>
     /// Measures how much working time separates two moments, ignoring everything the calendar does not
     /// count as work.
@@ -295,6 +305,68 @@ namespace BusinessTime.Activities
 
             TotalWorkingTime.SetValue(context, total);
             return intervals;
+        }
+    }
+
+    /// <summary>
+    /// Finds the next, or previous, working day and reports the moment work starts on it.
+    /// </summary>
+    /// <remarks>
+    /// The answer is when work actually begins on that day, not midnight, and it follows the day's own
+    /// hours: a day with exceptional hours opens when those hours say it does.
+    /// </remarks>
+    [DisplayName("Get Next Business Day")]
+    [Description("Finds the next, or previous, working day and reports the moment work starts on it.")]
+    public sealed class GetNextBusinessDay : BusinessTimeActivity<DateTime>
+    {
+        /// <summary>The date to search from. The date itself is never the answer.</summary>
+        [RequiredArgument]
+        [Category(Categories.Input)]
+        [DisplayName("Date")]
+        [Description("The date to search from. The search is strict, so this date itself is never the answer.")]
+        public InArgument<DateTime> Date { get; set; }
+
+        /// <summary>Which way to look.</summary>
+        [Category(Categories.Options)]
+        [DisplayName("Direction")]
+        [Description("Whether to look forward to the next working day, or backward to the previous one.")]
+        public DayDirection Direction { get; set; }
+
+        /// <summary>The moment work stops on that day.</summary>
+        [Category(Categories.Output)]
+        [DisplayName("Day end")]
+        [Description("The moment work stops on that day. For a night shift this falls on the following calendar day.")]
+        public OutArgument<DateTime> DayEnd { get; set; }
+
+        /// <summary>Total working time scheduled on that day.</summary>
+        [Category(Categories.Output)]
+        [DisplayName("Working time")]
+        [Description("Total working time scheduled on that day, breaks excluded.")]
+        public OutArgument<TimeSpan> WorkingTime { get; set; }
+
+        /// <summary>Name of the holiday or exception covering that day, when there is one.</summary>
+        [Category(Categories.Output)]
+        [DisplayName("Special day name")]
+        [Description("Name of the exception covering that day, or empty when the ordinary week applies.")]
+        public OutArgument<string> SpecialDayName { get; set; }
+
+        /// <inheritdoc />
+        protected override DateTime Calculate(NativeActivityContext context)
+        {
+            BusinessCalendar calendar = ResolveCalendar(context);
+            DateTime from = Date.GetValue(context);
+
+            DateTime result = Direction == DayDirection.Previous
+                ? calendar.PreviousWorkingDay(from)
+                : calendar.NextWorkingDay(from);
+
+            DateTime? end = calendar.GetEndOfBusinessDay(result);
+
+            DayEnd.SetValue(context, end ?? default(DateTime));
+            WorkingTime.SetValue(context, calendar.GetWorkingTimeOnDay(result));
+            SpecialDayName.SetValue(context, calendar.GetSpecialDay(result)?.Name ?? string.Empty);
+
+            return result;
         }
     }
 }

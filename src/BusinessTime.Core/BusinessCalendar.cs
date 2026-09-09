@@ -397,11 +397,38 @@ namespace BusinessTime
             throw new BusinessTimeException($"No working time found before {moment:yyyy-MM-dd HH:mm} in {Describe()}.");
         }
 
-        /// <summary>The start of the next working day strictly after the date part of <paramref name="date"/>.</summary>
-        public DateTime NextWorkingDay(DateTime date) => AddWorkingDays(ToCalendarTime(date).Date, 1);
+        /// <summary>
+        /// The first working moment of the next working day, strictly after the date part of
+        /// <paramref name="date"/>. On a 09:00-17:00 week, asking on a Friday returns Monday at 09:00.
+        /// </summary>
+        public DateTime NextWorkingDay(DateTime date) => FindWorkingDayStart(date, 1);
 
-        /// <summary>The start of the previous working day strictly before the date part of <paramref name="date"/>.</summary>
-        public DateTime PreviousWorkingDay(DateTime date) => AddWorkingDays(ToCalendarTime(date).Date, -1);
+        /// <summary>
+        /// The first working moment of the previous working day, strictly before the date part of
+        /// <paramref name="date"/>. On a 09:00-17:00 week, asking on a Monday returns Friday at 09:00.
+        /// </summary>
+        public DateTime PreviousWorkingDay(DateTime date) => FindWorkingDayStart(date, -1);
+
+        /// <summary>
+        /// Walks whole days in <paramref name="step"/> direction until one carries working time, and returns
+        /// the moment work starts on it.
+        /// </summary>
+        private DateTime FindWorkingDayStart(DateTime date, int step)
+        {
+            DateTime day = ToCalendarTime(date).Date;
+
+            for (int scanned = 0; scanned < MaxDaysScanned; scanned++)
+            {
+                day = day.AddDays(step);
+
+                IReadOnlyList<TimeRange> shifts = GetShifts(day);
+                if (shifts.Count > 0)
+                    return Restore(day + shifts[0].Start, date.Kind);
+            }
+
+            throw new BusinessTimeException(
+                $"No working day found {(step > 0 ? "after" : "before")} {date:yyyy-MM-dd} in {Describe()}.");
+        }
 
         /// <summary>
         /// The working windows that overlap the period between two moments, clipped to that period and
