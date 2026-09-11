@@ -29,6 +29,33 @@ jobs:
       - name: Pack
         run: dotnet pack src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts --no-build
 
+      # Packing without the designers is only a warning, and warnings do not fail a build, so the shape of
+      # the package is asserted here instead: designers with the Windows assets, never with the portable ones.
+      - name: Verify package layout
+        run: |
+          set -euo pipefail
+          package=$(ls artifacts/*.nupkg)
+          contents=$(unzip -l "$package")
+          echo "$contents"
+
+          expect() {
+            if ! grep -q "$1" <<<"$contents"; then
+              echo "::error::Expected $1 in $package"
+              exit 1
+            fi
+          }
+
+          expect "lib/net461/BusinessTime.Activities.dll"
+          expect "lib/net461/BusinessTime.Activities.Design.dll"
+          expect "lib/net461/BusinessTime.Core.dll"
+          expect "lib/net6.0/BusinessTime.Activities.dll"
+          expect "lib/net6.0/BusinessTime.Core.dll"
+
+          if grep -q "lib/net6.0/BusinessTime.Activities.Design.dll" <<<"$contents"; then
+            echo "::error::The Windows-only designers must not ship with the cross-platform assets"
+            exit 1
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: activity-package
