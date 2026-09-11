@@ -39,13 +39,31 @@
     .nupkg into Studio or Orchestrator is enough to get a working activity pack.
   -->
   <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessTimeCore</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessTimeCore;IncludeBusinessTimeDesigners</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <Target Name="IncludeBusinessTimeCore">
     <ItemGroup>
       <BuildOutputInPackage Include="$(OutputPath)BusinessTime.Core.dll" />
       <BuildOutputInPackage Include="$(OutputPath)BusinessTime.Core.xml" Condition="Exists('$(OutputPath)BusinessTime.Core.xml')" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Studio loads the designers from an assembly sitting beside the activities. It is design time only and
+    Windows only, so it ships with the net461 assets and is simply absent from the cross-platform ones,
+    where the stock designers apply. It is referenced by path rather than as a ProjectReference because the
+    design project references this one, and NuGet will not allow that circle.
+  -->
+  <PropertyGroup>
+    <DesignAssembly>$(MSBuildThisFileDirectory)..\BusinessTime.Activities.Design\bin\$(Configuration)\net461\BusinessTime.Activities.Design.dll</DesignAssembly>
+  </PropertyGroup>
+
+  <Target Name="IncludeBusinessTimeDesigners" Condition="'$(TargetFramework)' == 'net461'">
+    <Warning Condition="!Exists('$(DesignAssembly)')"
+             Text="BusinessTime.Activities.Design.dll was not found at $(DesignAssembly), so this package will ship without designers. Build the solution before packing." />
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(DesignAssembly)" Condition="Exists('$(DesignAssembly)')" />
     </ItemGroup>
   </Target>
 
