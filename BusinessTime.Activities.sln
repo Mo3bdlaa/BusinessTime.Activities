@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessTime.Core.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessTime.Activities.Tests", "tests\BusinessTime.Activities.Tests\BusinessTime.Activities.Tests.csproj", "{6F008247-6247-4C1F-BBE1-7504BED1841E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessTime.Activities.Design", "src\BusinessTime.Activities.Design\BusinessTime.Activities.Design.csproj", "{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,11 +42,16 @@ Global
 		{6F008247-6247-4C1F-BBE1-7504BED1841E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F008247-6247-4C1F-BBE1-7504BED1841E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F008247-6247-4C1F-BBE1-7504BED1841E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{DE79947F-0514-4A42-8745-5AC46385E5E7} = {BBAD2C7D-A6ED-4E95-8CF1-E5F5B3191188}
 		{DE89245D-62AF-4E11-9036-751D977249F5} = {BBAD2C7D-A6ED-4E95-8CF1-E5F5B3191188}
 		{DC912456-40B3-4786-B100-C1D0E3D55101} = {93B94257-CA14-46D5-B093-14207E684CE2}
 		{6F008247-6247-4C1F-BBE1-7504BED1841E} = {93B94257-CA14-46D5-B093-14207E684CE2}
+		{D3ECA6F2-E465-4FD8-9F01-0B427D7DA219} = {BBAD2C7D-A6ED-4E95-8CF1-E5F5B3191188}
 	EndGlobalSection
 EndGlobal

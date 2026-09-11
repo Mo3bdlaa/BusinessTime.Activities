@@ -240,6 +240,37 @@ Worth knowing, because these are the cases where implementations usually disagre
 
 ---
 
+## Designers and platforms
+
+The runtime and the designer are separate things, and they run in different places.
+
+| | Targets | Runs on |
+| --- | --- | --- |
+| `BusinessTime.Core` | `netstandard2.0`, `net461`, `net6.0` | anywhere .NET runs |
+| `BusinessTime.Activities` | `net461`, `net6.0` | Windows-legacy, Windows and cross-platform robots alike |
+| `BusinessTime.Activities.Design` | `net461` | Studio only, at design time |
+
+**The activities are cross-platform.** The `net6.0` assets run on a Linux robot as they do on Windows, and
+the runtime assembly deliberately references nothing from WPF — there is a test that fails the build if it
+ever starts to. Time zones are resolved by identifier, so `Europe/Berlin` works on Linux and
+`W. Europe Standard Time` works on Windows, whichever the calendar was written with.
+
+**The designer is Windows-only, and cannot be otherwise.** Studio is a WPF application, so anything that
+draws on its canvas is Windows-only however the runtime is targeted. The design assembly ships alongside the
+`net461` assets, is never loaded by a robot, and is absent from the cross-platform assets, where Studio falls
+back to its stock designers.
+
+It is written in code rather than XAML so that the whole solution still builds on any operating system — the
+WPF markup compiler only runs on Windows. What it provides:
+
+- **A drop area on Business Calendar Scope.** This one matters: an `ActivityAction` body has no default
+  design surface, so without it the scope has nowhere to put the activities that belong inside it.
+- **An icon** on each activity, so the pack reads as one set on the canvas.
+
+Designers are attached through `IRegisterMetadata`, which Studio calls once when it loads the package. If
+registration were ever to fail it is swallowed and the stock designers apply, so a designer problem can
+never stop the activities themselves from loading.
+
 ## Building and installing
 
 ```bash
@@ -249,8 +280,11 @@ dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Relea
 ```
 
 `artifacts/BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
-projects and `net6.0` for Windows and cross-platform ones, and the engine travels inside it, so this one file
-is all Studio needs.
+projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
+inside it, so this one file is all Studio needs.
+
+Build the solution before packing: the designers are picked up from their build output, and packing without
+them raises a warning and produces a package that works but looks unbranded on the canvas.
 
 To install it:
 
@@ -294,6 +328,8 @@ for the JSON format.
 src/BusinessTime.Core          the calendar model and the calculation engine
 src/BusinessTime.Activities    the UiPath activities
 tests/BusinessTime.Core.Tests  engine tests
+src/BusinessTime.Activities.Design
+                               Studio designers, design time and Windows only
 tests/BusinessTime.Activities.Tests
                                activity tests, run through the real workflow runtime
 samples/                       an example calendar file
