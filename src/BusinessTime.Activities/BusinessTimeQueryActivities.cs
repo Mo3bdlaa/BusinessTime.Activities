@@ -42,36 +42,36 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("From")]
-        [Description("The moment to measure from.")]
+        [Description("The moment to measure from, for example ticket.Created.")]
         public InArgument<DateTime> From { get; set; }
 
         /// <summary>The later moment.</summary>
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("To")]
-        [Description("The moment to measure to. Earlier than From gives a negative result.")]
+        [Description("The moment to measure to, for example ticket.Answered or DateTime.Now. Earlier than From gives a negative result.")]
         public InArgument<DateTime> To { get; set; }
 
         /// <summary>The result expressed in business days.</summary>
         [Category(Categories.Output)]
         [DisplayName("Business days")]
-        [Description("The same result expressed in business days, using the calendar's hours per business day.")]
+        [Description("The same answer in business days, for example 1.5. Uses the calendar's hours per business day.")]
         public OutArgument<double> BusinessDays { get; set; }
 
         /// <summary>The result expressed in business hours.</summary>
         [Category(Categories.Output)]
         [DisplayName("Business hours")]
-        [Description("The same result expressed in business hours.")]
+        [Description("The same answer in business hours, for example 12.5. Handy for writing a number straight into a report.")]
         public OutArgument<double> BusinessHours { get; set; }
 
         /// <summary>Number of working days touched by the period.</summary>
         [Category(Categories.Output)]
         [DisplayName("Working days")]
-        [Description("How many working days the period touches, counting both end dates.")]
+        [Description("How many working days the period touches, counting both end dates. Friday to Monday on a Mon-Fri week is 2.")]
         public OutArgument<int> WorkingDays { get; set; }
 
         /// <inheritdoc />
-        protected override TimeSpan Calculate(NativeActivityContext context)
+        protected override TimeSpan Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime from = From.GetValue(context);
@@ -97,23 +97,23 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Date")]
-        [Description("The moment to test.")]
+        [Description("The moment to test, for example DateTime.Now.")]
         public InArgument<DateTime> Date { get; set; }
 
         /// <summary>Whether the date is a working day, regardless of the time of day.</summary>
         [Category(Categories.Output)]
         [DisplayName("Is working day")]
-        [Description("Whether any work at all is scheduled on that date.")]
+        [Description("True when any work at all is scheduled that date, whatever the time of day. Use this to tell a closed day from merely being out of hours.")]
         public OutArgument<bool> IsWorkingDay { get; set; }
 
         /// <summary>Name of the holiday or exception covering the date, when there is one.</summary>
         [Category(Categories.Output)]
         [DisplayName("Special day name")]
-        [Description("Name of the holiday, shutdown or exception covering the date, or empty when the ordinary week applies.")]
+        [Description("The name of the holiday, shutdown or exception covering that date, for example \"Christmas Day\". Empty when the ordinary week applies, so it reads well in a log line.")]
         public OutArgument<string> SpecialDayName { get; set; }
 
         /// <inheritdoc />
-        protected override bool Calculate(NativeActivityContext context)
+        protected override bool Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime moment = Date.GetValue(context);
@@ -143,23 +143,23 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Date")]
-        [Description("The moment to move onto the calendar.")]
+        [Description("The moment to move onto the calendar, for example request.Received. A request arriving at the weekend becomes Monday morning.")]
         public InArgument<DateTime> Date { get; set; }
 
         /// <summary>Which way to move.</summary>
         [Category(Categories.Options)]
         [DisplayName("Direction")]
-        [Description("Forward moves to the start of the next working window; Backward moves to the end of the previous one.")]
+        [Description("Forward moves to the start of the next working window, which is what you want before starting a countdown. Backward moves to the moment work last stopped.")]
         public SnapDirection Direction { get; set; }
 
         /// <summary>Whether the moment had to be moved at all.</summary>
         [Category(Categories.Output)]
         [DisplayName("Was adjusted")]
-        [Description("False when the moment was already working time and came back unchanged.")]
+        [Description("False when the moment was already working time and came back unchanged, true when it had to be moved. Worth logging.")]
         public OutArgument<bool> WasAdjusted { get; set; }
 
         /// <inheritdoc />
-        protected override DateTime Calculate(NativeActivityContext context)
+        protected override DateTime Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime moment = Date.GetValue(context);
@@ -182,41 +182,41 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Date")]
-        [Description("The date to describe. The time of day is ignored.")]
+        [Description("The date to describe, for example DateTime.Today. The time of day is ignored.")]
         public InArgument<DateTime> Date { get; set; }
 
         /// <summary>First working moment of the day.</summary>
         [Category(Categories.Output)]
         [DisplayName("Day start")]
-        [Description("First working moment of the day. Left at its default when the date is not worked.")]
+        [Description("When work starts that day, for example 09:00. Left at its default when the date is not worked, so check Result first.")]
         public OutArgument<DateTime> DayStart { get; set; }
 
         /// <summary>The moment work stops.</summary>
         [Category(Categories.Output)]
         [DisplayName("Day end")]
-        [Description("The moment work stops. For a night shift this falls on the following calendar day.")]
+        [Description("When work stops that day, for example 17:00. For a night shift this falls on the next calendar day.")]
         public OutArgument<DateTime> DayEnd { get; set; }
 
         /// <summary>Total working time scheduled on the date.</summary>
         [Category(Categories.Output)]
         [DisplayName("Working time")]
-        [Description("Total working time scheduled on that date, breaks excluded.")]
+        [Description("How much working time that date holds, breaks excluded, for example 07:00:00 for a nine to five with an hour for lunch.")]
         public OutArgument<TimeSpan> WorkingTime { get; set; }
 
         /// <summary>The day's shifts, rendered as text.</summary>
         [Category(Categories.Output)]
         [DisplayName("Shifts")]
-        [Description("The day's working windows as text, for example '09:00-12:00,13:00-17:00'.")]
+        [Description("The day's working windows as text, for example \"09:00-12:00,13:00-17:00\", or \"off\" when nobody works. Reads well in a log or an email.")]
         public OutArgument<string> Shifts { get; set; }
 
         /// <summary>Name of the holiday or exception covering the date, when there is one.</summary>
         [Category(Categories.Output)]
         [DisplayName("Special day name")]
-        [Description("Name of the holiday, shutdown or exception covering the date, or empty when the ordinary week applies.")]
+        [Description("The name of the holiday, shutdown or exception covering that date, for example \"Christmas Day\". Empty when the ordinary week applies, so it reads well in a log line.")]
         public OutArgument<string> SpecialDayName { get; set; }
 
         /// <inheritdoc />
-        protected override bool Calculate(NativeActivityContext context)
+        protected override bool Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime date = Date.GetValue(context);
@@ -244,18 +244,18 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("From")]
-        [Description("First date of the period.")]
+        [Description("First date of the period, for example DateTime.Today.")]
         public InArgument<DateTime> From { get; set; }
 
         /// <summary>Last date of the period.</summary>
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("To")]
-        [Description("Last date of the period. Earlier than From gives a negative count.")]
+        [Description("Last date of the period, counted in as well. Earlier than From gives a negative count.")]
         public InArgument<DateTime> To { get; set; }
 
         /// <inheritdoc />
-        protected override int Calculate(NativeActivityContext context)
+        protected override int Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             return calendar.CountWorkingDays(From.GetValue(context), To.GetValue(context));
@@ -274,24 +274,24 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("From")]
-        [Description("Start of the period.")]
+        [Description("Start of the period, for example DateTime.Now.")]
         public InArgument<DateTime> From { get; set; }
 
         /// <summary>End of the period.</summary>
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("To")]
-        [Description("End of the period.")]
+        [Description("End of the period, for example DateTime.Now.AddDays(7).")]
         public InArgument<DateTime> To { get; set; }
 
         /// <summary>Total working time inside the period.</summary>
         [Category(Categories.Output)]
         [DisplayName("Total working time")]
-        [Description("Total working time inside the period.")]
+        [Description("Total working time inside the period, for example 2.00:00:00 for two working days.")]
         public OutArgument<TimeSpan> TotalWorkingTime { get; set; }
 
         /// <inheritdoc />
-        protected override IList<BusinessTimeInterval> Calculate(NativeActivityContext context)
+        protected override IList<BusinessTimeInterval> Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime from = From.GetValue(context);
@@ -323,19 +323,19 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Date")]
-        [Description("The date to search from. The search is strict, so this date itself is never the answer.")]
+        [Description("The date to search from, for example DateTime.Today. The search is strict, so this date itself is never the answer.")]
         public InArgument<DateTime> Date { get; set; }
 
         /// <summary>Which way to look.</summary>
         [Category(Categories.Options)]
         [DisplayName("Direction")]
-        [Description("Whether to look forward to the next working day, or backward to the previous one.")]
+        [Description("Next looks forward, which is what you want for \"retry tomorrow\". Previous looks back, for example to find the last working day of a month.")]
         public DayDirection Direction { get; set; }
 
         /// <summary>The moment work stops on that day.</summary>
         [Category(Categories.Output)]
         [DisplayName("Day end")]
-        [Description("The moment work stops on that day. For a night shift this falls on the following calendar day.")]
+        [Description("When work stops on that day, for example 17:00, so it can be used as the end of a window.")]
         public OutArgument<DateTime> DayEnd { get; set; }
 
         /// <summary>Total working time scheduled on that day.</summary>
@@ -347,11 +347,11 @@ namespace BusinessTime.Activities
         /// <summary>Name of the holiday or exception covering that day, when there is one.</summary>
         [Category(Categories.Output)]
         [DisplayName("Special day name")]
-        [Description("Name of the exception covering that day, or empty when the ordinary week applies.")]
+        [Description("The name of any exception covering that day, for example \"Christmas Eve\" for a half day. Empty when the ordinary week applies.")]
         public OutArgument<string> SpecialDayName { get; set; }
 
         /// <inheritdoc />
-        protected override DateTime Calculate(NativeActivityContext context)
+        protected override DateTime Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime from = Date.GetValue(context);

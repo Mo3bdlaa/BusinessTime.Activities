@@ -28,43 +28,43 @@ namespace BusinessTime.Activities
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Date")]
-        [Description("The moment to start from. A moment outside working hours is allowed: the clock simply starts running at the next working moment.")]
+        [Description("The moment to start from, for example DateTime.Now or ticket.Created. A moment outside working hours is fine: the clock simply starts running when the office next opens.")]
         public InArgument<DateTime> Date { get; set; }
 
         /// <summary>Number of business days to shift by.</summary>
         [Category(Categories.Input)]
         [DisplayName("Days")]
-        [Description("Business days to shift by. Read according to the Day handling property.")]
+        [Description("Business days to shift by, for example 3 for a three business day deadline. Read according to the Day handling property below. Combine freely with Hours and Minutes: 1 day and 4 hours is Days 1, Hours 4.")]
         public InArgument<double> Days { get; set; }
 
         /// <summary>Number of business hours to shift by.</summary>
         [Category(Categories.Input)]
         [DisplayName("Hours")]
-        [Description("Business hours to shift by. Fractions are allowed.")]
+        [Description("Business hours to shift by, for example 8 for a working day, 4 for half a day, 1.5 for ninety minutes. Negative values move the other way.")]
         public InArgument<double> Hours { get; set; }
 
         /// <summary>Number of business minutes to shift by.</summary>
         [Category(Categories.Input)]
         [DisplayName("Minutes")]
-        [Description("Business minutes to shift by.")]
+        [Description("Business minutes to shift by, for example 30 or 90. Adds on top of Days and Hours.")]
         public InArgument<double> Minutes { get; set; }
 
         /// <summary>An additional duration to shift by, for when the amount is already a TimeSpan.</summary>
         [Category(Categories.Input)]
         [DisplayName("Duration")]
-        [Description("An additional amount of working time to shift by, for when the amount is already held in a TimeSpan.")]
+        [Description("An extra amount of working time, for when the amount is already a TimeSpan, for example TimeSpan.FromHours(4) or sla.Duration. Adds on top of Days, Hours and Minutes.")]
         public InArgument<TimeSpan> Duration { get; set; }
 
         /// <summary>How the <see cref="Days"/> input should be read.</summary>
         [Category(Categories.Options)]
         [DisplayName("Day handling")]
-        [Description("Whether a day means the calendar's hours per business day, or a whole day on the calendar with the clock time carried over.")]
+        [Description("What a day in the Days property means. AsWorkingHours: a day is the calendar's working hours, so Friday 14:00 plus 1 day is Monday 14:00 and half days are allowed. AsWholeDays: a day is a whole day on the calendar, keeping the clock time, which is what \"three business days\" usually means for a deadline.")]
         public DayHandling DayHandling { get; set; }
 
         /// <summary>The working time actually skipped over, including closed hours.</summary>
         [Category(Categories.Output)]
         [DisplayName("Elapsed time")]
-        [Description("The wall clock time between the input and the result, including the closed hours that were skipped.")]
+        [Description("How much real time passed between the input and the result, closed hours included. Friday 14:00 plus 8 business hours lands on Monday 14:00, so this reports 3 days.")]
         public OutArgument<TimeSpan> ElapsedTime { get; set; }
 
         /// <summary>Direction this activity shifts in: 1 forwards, -1 backwards.</summary>
@@ -74,7 +74,7 @@ namespace BusinessTime.Activities
         protected abstract string ActivityName { get; }
 
         /// <inheritdoc />
-        protected override DateTime Calculate(NativeActivityContext context)
+        protected override DateTime Execute(CodeActivityContext context)
         {
             BusinessCalendar calendar = ResolveCalendar(context);
             DateTime start = Date.GetValue(context);

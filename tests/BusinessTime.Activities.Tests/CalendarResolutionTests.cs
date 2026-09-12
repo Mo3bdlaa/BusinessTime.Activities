@@ -17,84 +17,12 @@ namespace BusinessTime.Activities.Tests
             .WithTimeZone(TimeZoneInfo.Utc)
             .Build();
 
-        [Fact]
-        public void ActivitiesInheritTheCalendarFromTheSurroundingScope()
-        {
-            var scope = new BusinessCalendarScope
-            {
-                Calendar = WorkflowHarness.Arg(SixHourDays)
-            };
 
-            var inner = new AddBusinessTime
-            {
-                Date = WorkflowHarness.Arg(Monday.AddHours(14)),
-                Hours = WorkflowHarness.Arg<double>(2)
-            };
 
-            // Short days close at 15:00, so only one hour is left on Monday and the second runs on Tuesday.
-            Assert.Equal(Monday.AddDays(1).AddHours(10), WorkflowHarness.RunInScope(scope, inner));
-        }
+
 
         [Fact]
-        public void AScopeCanBeDefinedWithAScheduleStringAlone()
-        {
-            var scope = new BusinessCalendarScope
-            {
-                Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-15:00")
-            };
-
-            var inner = new CountBusinessDays
-            {
-                From = WorkflowHarness.Arg(Monday),
-                To = WorkflowHarness.Arg(Monday.AddDays(6))
-            };
-
-            Assert.Equal(5, WorkflowHarness.RunInScope(scope, inner));
-        }
-
-        [Fact]
-        public void AnActivityWithItsOwnCalendarIgnoresTheScope()
-        {
-            var scope = new BusinessCalendarScope
-            {
-                Calendar = WorkflowHarness.Arg(SixHourDays)
-            };
-
-            BusinessCalendar longDays = BusinessCalendar.Create()
-                .WithSchedule("Mon-Fri 09:00-17:00")
-                .WithTimeZone(TimeZoneInfo.Utc)
-                .Build();
-
-            var inner = new AddBusinessTime
-            {
-                Calendar = WorkflowHarness.Arg(longDays),
-                Date = WorkflowHarness.Arg(Monday.AddHours(14)),
-                Hours = WorkflowHarness.Arg<double>(2)
-            };
-
-            Assert.Equal(Monday.AddHours(16), WorkflowHarness.RunInScope(scope, inner));
-        }
-
-        [Fact]
-        public void TheScopeHandsItsCalendarToTheBodyAsAnArgument()
-        {
-            var scope = new BusinessCalendarScope
-            {
-                Calendar = WorkflowHarness.Arg(SixHourDays)
-            };
-
-            var inner = new AddBusinessTime
-            {
-                Calendar = new InArgument<BusinessCalendar>(scope.Body.Argument),
-                Date = WorkflowHarness.Arg(Monday.AddHours(14)),
-                Hours = WorkflowHarness.Arg<double>(2)
-            };
-
-            Assert.Equal(Monday.AddDays(1).AddHours(10), WorkflowHarness.RunInScope(scope, inner));
-        }
-
-        [Fact]
-        public void WithoutACalendarOrScopeTheScheduleShorthandIsUsed()
+        public void WithoutACalendarTheWorkingWeekPropertyIsUsed()
         {
             var activity = new CountBusinessDays
             {
@@ -125,7 +53,7 @@ namespace BusinessTime.Activities.Tests
             {
                 Name = WorkflowHarness.Arg("Support desk"),
                 Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00"),
-                TimeZoneId = WorkflowHarness.Arg("UTC"),
+                TimeZone = CommonTimeZone.UTC,
                 HoursPerBusinessDay = WorkflowHarness.Arg<double>(7),
                 Holidays = WorkflowHarness.Arg((IEnumerable<DateTime>)new[] { Monday.AddDays(1) }),
                 AnnualHolidays = WorkflowHarness.Arg((IEnumerable<DateTime>)new[] { new DateTime(2000, 1, 1) })
@@ -176,10 +104,10 @@ namespace BusinessTime.Activities.Tests
             BusinessCalendar loaded = WorkflowHarness.RunFor(new LoadBusinessCalendar
             {
                 Json = WorkflowHarness.Arg("{ \"week\": \"Mon-Fri 08:00-16:00\", \"timeZone\": \"UTC\" }"),
-                TimeZoneId = WorkflowHarness.Arg("Europe/Berlin")
+                TimeZoneOverride = CommonTimeZone.Berlin
             });
 
-            Assert.Equal("Europe/Berlin", loaded.TimeZone.Id);
+            Assert.Equal(TimeZones.Resolve("W. Europe Standard Time").Id, loaded.TimeZone.Id);
             Assert.Equal(5, loaded.Schedule.WorkingDaysPerWeek);
         }
 
