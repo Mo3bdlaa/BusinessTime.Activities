@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using UiPath.Studio.Activities.Api;
 using UiPath.Studio.Activities.Api.Wizards;
 
@@ -19,12 +20,35 @@ namespace BusinessTime.Activities.Wizard
         /// The ribbon button's icon, a calendar page, carried inside this assembly so nothing has to be
         /// installed alongside it.
         /// </summary>
+        /// <summary>
+        /// Finds the ribbon button's icon.
+        /// </summary>
         /// <remarks>
-        /// The API documents this as the location of the icon resource in the providing assembly, so it is
-        /// given as a resource path relative to this one rather than as an absolute pack URI, which Studio
-        /// may not be able to resolve from the context it loads package assemblies into.
+        /// A pack URI is the obvious way to name an image inside an assembly, and it does not work here:
+        /// resolving one asks WPF to load this assembly by name, which fails when Studio has loaded it into
+        /// a context of its own. So the icon is shipped as a file beside this assembly and named by its path,
+        /// which needs nothing resolved. The copy embedded in the assembly is kept as a fallback for a host
+        /// that can resolve a pack URI after all.
         /// </remarks>
-        private const string IconUri = "/BusinessTime.Activities.Wizard;component/Resources/calendar.png";
+        private static string FindIcon()
+        {
+            const string embedded = "/BusinessTime.Activities.Wizard;component/Resources/calendar.png";
+
+            try
+            {
+                string assembly = typeof(CalendarWizardRegistration).Assembly.Location;
+                if (string.IsNullOrEmpty(assembly))
+                    return embedded;
+
+                string beside = Path.Combine(Path.GetDirectoryName(assembly) ?? string.Empty, "calendar.png");
+                return File.Exists(beside) ? new Uri(beside).AbsoluteUri : embedded;
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine("BusinessTime calendar icon could not be located: " + exception);
+                return embedded;
+            }
+        }
 
         /// <summary>Registers the wizard.</summary>
         public void Initialize(IWorkflowDesignApi api)
@@ -36,7 +60,7 @@ namespace BusinessTime.Activities.Wizard
                 wizards.WizardDefinitions.Add(new WizardDefinition
                 {
                     DisplayName = "Business Calendar",
-                    IconUri = IconUri,
+                    IconUri = FindIcon(),
                     Tooltip = "Create and maintain the business calendar file this process reads: " +
                               "the working week, the time zone, and the holidays, half days and shutdowns.",
                     MinimizeBeforeRun = false,

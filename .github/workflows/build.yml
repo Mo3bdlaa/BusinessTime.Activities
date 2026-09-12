@@ -51,6 +51,8 @@ jobs:
           expect "lib/net6.0/BusinessTime.Activities.dll"
           expect "lib/net6.0/BusinessTime.Core.dll"
           expect "lib/net6.0/BusinessTime.Activities.Wizard.dll"
+          # The wizard names its ribbon icon by path, so the file has to sit beside the assembly.
+          expect "lib/net6.0/calendar.png"
 
           if grep -q "lib/net6.0/BusinessTime.Activities.Design.dll" <<<"$contents"; then
             echo "::error::The Windows-only designers must not ship with the cross-platform assets"
