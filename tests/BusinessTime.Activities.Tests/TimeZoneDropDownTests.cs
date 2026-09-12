@@ -37,13 +37,13 @@ namespace BusinessTime.Activities.Tests
             var midsummer = new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
             Assert.Equal(TimeSpan.Zero, OffsetOf(CommonTimeZone.UTC, midsummer));
-            Assert.Equal(TimeSpan.FromHours(1), OffsetOf(CommonTimeZone.London, midsummer));
-            Assert.Equal(TimeSpan.FromHours(2), OffsetOf(CommonTimeZone.Berlin, midsummer));
-            Assert.Equal(TimeSpan.FromHours(5.5), OffsetOf(CommonTimeZone.Mumbai, midsummer));
-            Assert.Equal(TimeSpan.FromHours(9), OffsetOf(CommonTimeZone.Tokyo, midsummer));
-            Assert.Equal(TimeSpan.FromHours(10), OffsetOf(CommonTimeZone.Sydney, midsummer));
-            Assert.Equal(TimeSpan.FromHours(-4), OffsetOf(CommonTimeZone.NewYork, midsummer));
-            Assert.Equal(TimeSpan.FromHours(-7), OffsetOf(CommonTimeZone.LosAngeles, midsummer));
+            Assert.Equal(TimeSpan.FromHours(1), OffsetOf(CommonTimeZone.UTC_00_London, midsummer));
+            Assert.Equal(TimeSpan.FromHours(2), OffsetOf(CommonTimeZone.UTC_plus_01_Berlin, midsummer));
+            Assert.Equal(TimeSpan.FromHours(5.5), OffsetOf(CommonTimeZone.UTC_plus_05_30_Mumbai, midsummer));
+            Assert.Equal(TimeSpan.FromHours(9), OffsetOf(CommonTimeZone.UTC_plus_09_Tokyo, midsummer));
+            Assert.Equal(TimeSpan.FromHours(10), OffsetOf(CommonTimeZone.UTC_plus_10_Sydney, midsummer));
+            Assert.Equal(TimeSpan.FromHours(-4), OffsetOf(CommonTimeZone.UTC_minus_05_NewYork, midsummer));
+            Assert.Equal(TimeSpan.FromHours(-7), OffsetOf(CommonTimeZone.UTC_minus_08_LosAngeles, midsummer));
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace BusinessTime.Activities.Tests
             BusinessCalendar calendar = WorkflowHarness.RunFor(new CreateBusinessCalendar
             {
                 Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-17:00"),
-                TimeZone = CommonTimeZone.Tokyo
+                TimeZone = CommonTimeZone.UTC_plus_09_Tokyo
             });
 
             Assert.False(calendar.FollowsMachineTimeZone);

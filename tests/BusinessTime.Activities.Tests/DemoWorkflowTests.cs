@@ -25,7 +25,7 @@ namespace BusinessTime.Activities.Tests
         {
             Name = WorkflowHarness.Arg("Support desk"),
             Schedule = WorkflowHarness.Arg(Week),
-            TimeZone = CommonTimeZone.Berlin,
+            TimeZone = CommonTimeZone.UTC_plus_01_Berlin,
             HoursPerBusinessDay = WorkflowHarness.Arg(7.5),
             Holidays = WorkflowHarness.Arg<IEnumerable<DateTime>>(
                 new[] { new DateTime(2026, 10, 3), new DateTime(2026, 12, 25) }),
@@ -174,7 +174,7 @@ namespace BusinessTime.Activities.Tests
             BusinessCalendar fromJson = WorkflowHarness.RunFor(new LoadBusinessCalendar
             {
                 Json = WorkflowHarness.Arg(json),
-                TimeZoneOverride = CommonTimeZone.Tokyo
+                TimeZoneOverride = CommonTimeZone.UTC_plus_09_Tokyo
             });
 
             Assert.Equal("Berlin support desk", fromJson.Name);

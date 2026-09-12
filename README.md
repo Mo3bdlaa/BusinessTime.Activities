@@ -71,9 +71,13 @@ A calendar either belongs to a place or follows the machine. `MachineLocal` in t
 `"timeZone": "Local"` and each robot resolves its own zone on loading. Naming a city pins the hours to that
 place instead, which is what a support desk in one country wants.
 
-The **Time zone** property is a drop-down, named by a city so it can be recognised at a glance: `London`,
-`Berlin`, `NewYork`, `Mumbai`, `Tokyo`, `Sydney` and around forty more, plus `MachineLocal` to follow the
-robot's own clock and `UTC`.
+The **Time zone** property is a drop-down naming each zone by its offset and a city in it, so it can be read
+either way and the list runs west to east: `UTC_minus_05_NewYork`, `UTC_00_London`, `UTC_plus_01_Berlin`,
+`UTC_plus_05_30_Mumbai`, `UTC_plus_09_Tokyo` and around forty more, plus `MachineLocal` and `UTC`.
+
+The offsets are standard time, so a zone that keeps summer time is an hour further ahead for part of the
+year. The calculations account for that on their own; the offset in the name is only there to find the zone
+you mean.
 
 Anything not in the list is still reachable: pick `Custom` and type the identifier into **Time zone id**,
 which takes either spelling — `Europe/Oslo` or `Central Asia Standard Time`.
@@ -337,7 +341,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.5.0.nupkg`](packages/BusinessTime.Activities.1.5.0.nupkg), so Studio can
+[`packages/BusinessTime.Activities.2.0.0.nupkg`](packages/BusinessTime.Activities.2.0.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -349,7 +353,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.5.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.2.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
