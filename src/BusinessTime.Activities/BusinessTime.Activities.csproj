@@ -42,6 +42,12 @@
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <!--
+      The ribbon icon travels as a file beside the wizard assembly, not only embedded in it: naming it by
+      path is the one way to reach it that does not ask WPF to resolve this assembly by name, which Studio's
+      load context defeats.
+    -->
+    <None Include="..\BusinessTime.Activities.Wizard\Resources\calendar.png" Pack="true" PackagePath="lib\net6.0" />
   </ItemGroup>
 
   <!--
