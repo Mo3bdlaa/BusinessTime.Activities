@@ -32,8 +32,10 @@ namespace BusinessTime.Activities
         /// <summary>The zone the working hours are written in.</summary>
         [Category(Categories.Input)]
         [DisplayName("Time zone")]
-        [Description("The zone the working hours are written in, named by a city. Pick MachineLocal to follow the robot's own clock, " +
-                     "or Custom to type an identifier into the Time zone id property below.")]
+        [Description("The zone the working hours are written in, named by a city. " +
+                     "MachineLocal means the hours are local time wherever the process runs, so the calendar follows each robot " +
+                     "instead of fixing the hours to one place — pick a city when the hours belong to one office. " +
+                     "Custom takes an identifier in the Time zone id property below.")]
         public CommonTimeZone TimeZone { get; set; }
 
         /// <summary>An explicit time zone identifier, for zones not in the drop-down.</summary>
@@ -95,7 +97,7 @@ namespace BusinessTime.Activities
             if (!string.IsNullOrWhiteSpace(schedule))
                 builder.WithSchedule(schedule);
 
-            builder.WithTimeZone(CommonTimeZones.Resolve(TimeZone, TimeZoneId.GetValue(context)));
+            CommonTimeZones.ApplyTo(builder, TimeZone, TimeZoneId.GetValue(context));
             builder.WithName(Name.GetValue(context));
 
             double dayLength = HoursPerBusinessDay.GetValue(context);

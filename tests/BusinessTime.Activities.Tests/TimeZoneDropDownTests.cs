@@ -86,3 +86,132 @@ namespace BusinessTime.Activities.Tests
         }
     }
 }
+
+namespace BusinessTime.Activities.Tests
+{
+    /// <summary>Covers what the MachineLocal choice means once a calendar is saved and moved.</summary>
+    public class MachineLocalChoiceTests
+    {
+        [Fact]
+        public void MachineLocalMakesACalendarThatFollowsEachRobot()
+        {
+            BusinessCalendar calendar = WorkflowHarness.RunFor(new CreateBusinessCalendar
+            {
+                Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-17:00"),
+                TimeZone = CommonTimeZone.MachineLocal
+            });
+
+            Assert.True(calendar.FollowsMachineTimeZone);
+            Assert.Contains("\"timeZone\": \"Local\"", BusinessCalendarSerializer.ToJson(calendar));
+        }
+
+        [Fact]
+        public void ACityPinsTheHoursToThatPlace()
+        {
+            BusinessCalendar calendar = WorkflowHarness.RunFor(new CreateBusinessCalendar
+            {
+                Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-17:00"),
+                TimeZone = CommonTimeZone.Tokyo
+            });
+
+            Assert.False(calendar.FollowsMachineTimeZone);
+            Assert.Contains("Tokyo", BusinessCalendarSerializer.ToJson(calendar));
+        }
+
+        [Fact]
+        public void AnIdentifierAlongsideMachineLocalStillPinsIt()
+        {
+            BusinessCalendar calendar = WorkflowHarness.RunFor(new CreateBusinessCalendar
+            {
+                Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-17:00"),
+                TimeZoneId = WorkflowHarness.Arg("Europe/Oslo")
+            });
+
+            Assert.False(calendar.FollowsMachineTimeZone);
+            Assert.Equal("Europe/Oslo", calendar.TimeZone.Id);
+        }
+    }
+}
+
+namespace BusinessTime.Activities.Tests
+{
+    /// <summary>
+    /// The point of a portable calendar is what happens on the robot, not in the editor: the file names no
+    /// zone, and whichever machine loads it supplies its own.
+    /// </summary>
+    public class PortableCalendarTests
+    {
+        private const string PortableJson = "{ \"name\": \"Follows the robot\", \"week\": \"Mon-Fri 09:00-17:00\", \"timeZone\": \"Local\" }";
+
+        [Fact]
+        public void LoadBusinessCalendarStillGivesAnOrdinaryCalendarVariable()
+        {
+            BusinessCalendar calendar = WorkflowHarness.RunFor(new LoadBusinessCalendar
+            {
+                Json = WorkflowHarness.Arg(PortableJson)
+            });
+
+            Assert.Equal("Follows the robot", calendar.Name);
+            Assert.True(calendar.FollowsMachineTimeZone);
+
+            // Resolved on the machine doing the loading, which on a robot is that robot.
+            Assert.Equal(TimeZoneInfo.Local.Id, calendar.TimeZone.Id);
+        }
+
+        [Fact]
+        public void ThatVariableWorksInEveryOtherActivityAsBefore()
+        {
+            BusinessCalendar calendar = WorkflowHarness.RunFor(new LoadBusinessCalendar
+            {
+                Json = WorkflowHarness.Arg(PortableJson)
+            });
+
+            // A Friday at 14:00 in the robot's own time, plus eight business hours.
+            var friday = new DateTime(2026, 9, 11, 14, 0, 0);
+
+            DateTime result = WorkflowHarness.RunFor(new AddBusinessTime
+            {
+                Calendar = WorkflowHarness.Arg(calendar),
+                Date = WorkflowHarness.Arg(friday),
+                Hours = WorkflowHarness.Arg<double>(8)
+            });
+
+            Assert.Equal(new DateTime(2026, 9, 14, 14, 0, 0), result);
+        }
+
+        [Fact]
+        public void SavingAndLoadingItAgainKeepsItPortable()
+        {
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".json");
+
+            try
+            {
+                BusinessCalendar built = WorkflowHarness.RunFor(new CreateBusinessCalendar
+                {
+                    Schedule = WorkflowHarness.Arg("Mon-Fri 09:00-17:00"),
+                    TimeZone = CommonTimeZone.MachineLocal
+                });
+
+                WorkflowHarness.Run(new SaveBusinessCalendar
+                {
+                    Calendar = WorkflowHarness.Arg(built),
+                    FilePath = WorkflowHarness.Arg(path)
+                });
+
+                Assert.Contains("\"timeZone\": \"Local\"", System.IO.File.ReadAllText(path));
+
+                BusinessCalendar reloaded = WorkflowHarness.RunFor(new LoadBusinessCalendar
+                {
+                    FilePath = WorkflowHarness.Arg(path)
+                });
+
+                Assert.True(reloaded.FollowsMachineTimeZone);
+            }
+            finally
+            {
+                if (System.IO.File.Exists(path))
+                    System.IO.File.Delete(path);
+            }
+        }
+    }
+}

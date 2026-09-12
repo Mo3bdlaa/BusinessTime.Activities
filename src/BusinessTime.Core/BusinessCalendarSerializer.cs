@@ -34,6 +34,14 @@ namespace BusinessTime
     /// </remarks>
     public static class BusinessCalendarSerializer
     {
+        /// <summary>What a calendar file says when its hours mean local time wherever it runs.</summary>
+        public const string MachineTimeZone = "Local";
+
+        private static bool IsMachineTimeZone(string id) =>
+            !string.IsNullOrWhiteSpace(id) &&
+            (id.Trim().Equals(MachineTimeZone, StringComparison.OrdinalIgnoreCase) ||
+             id.Trim().Equals("MachineLocal", StringComparison.OrdinalIgnoreCase));
+
         private static readonly string[] DateFormats =
         {
             "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss", "MM-dd", "MM/dd"
@@ -72,7 +80,16 @@ namespace BusinessTime
                     builder.WithName(name.GetString());
 
                 if (TryGet(root, out JsonElement timeZone, "timeZone", "timezone", "timeZoneId") && timeZone.ValueKind == JsonValueKind.String)
-                    builder.WithTimeZone(timeZone.GetString());
+                {
+                    string id = timeZone.GetString();
+
+                    // "Local" is an instruction rather than a zone: resolve it on whichever machine loads
+                    // the file, so one calendar can serve robots in different countries.
+                    if (IsMachineTimeZone(id))
+                        builder.WithMachineTimeZone();
+                    else
+                        builder.WithTimeZone(id);
+                }
 
                 if (TryGet(root, out JsonElement week, "week", "schedule", "workingHours"))
                     builder.WithSchedule(ReadSchedule(week));
@@ -120,7 +137,7 @@ namespace BusinessTime
                     if (!string.IsNullOrWhiteSpace(calendar.Name))
                         writer.WriteString("name", calendar.Name);
 
-                    writer.WriteString("timeZone", calendar.TimeZone.Id);
+                    writer.WriteString("timeZone", calendar.FollowsMachineTimeZone ? MachineTimeZone : calendar.TimeZone.Id);
                     writer.WriteNumber("hoursPerBusinessDay", Math.Round(calendar.HoursPerBusinessDay.TotalHours, 4));
                     writer.WriteString("week", calendar.Schedule.ToString());
 
