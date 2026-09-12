@@ -67,8 +67,8 @@ namespace BusinessTime.Activities.Tests
         [Fact]
         public void TheActivitySetIsWhatTheDocumentationClaims()
         {
-            // Twelve activities plus the Business Calendar Scope. A change here should be a deliberate one.
-            Assert.Equal(13, PublicActivities.Count());
+            // Twelve activities, with no scope: the calendar is handed to each one directly.
+            Assert.Equal(12, PublicActivities.Count());
         }
 
         [Fact]
@@ -85,6 +85,35 @@ namespace BusinessTime.Activities.Tests
 
             Assert.NotNull(reference);
             Assert.Equal(new Version(6, 0, 0, 0), reference.Version);
+        }
+
+        [Fact]
+        public void EveryActivityDrawsItsMainFieldsOnTheCard()
+        {
+            // The inline designer only draws activities it has a layout for; one without falls back to a
+            // bare card, which looks broken next to the rest of the pack.
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory != null && !Directory.Exists(Path.Combine(directory.FullName, "src")))
+                directory = directory.Parent;
+            Assert.NotNull(directory);
+
+            string source = File.ReadAllText(Path.Combine(
+                directory.FullName, "src", "BusinessTime.Activities.Design", "InlineActivityDesigner.cs"));
+
+            HashSet<string> laidOut = Regex.Matches(source, @"\[""(?<name>[A-Za-z0-9_]+)""\] = new\[\]")
+                .Cast<Match>()
+                .Select(match => match.Groups["name"].Value)
+                .ToHashSet();
+
+            string[] missing = PublicActivities
+                .Select(type => type.Name)
+                .Where(name => !laidOut.Contains(name))
+                .OrderBy(name => name)
+                .ToArray();
+
+            Assert.True(
+                missing.Length == 0,
+                "These activities have no inline layout in InlineActivityDesigner.cs: " + string.Join(", ", missing));
         }
 
         [Fact]

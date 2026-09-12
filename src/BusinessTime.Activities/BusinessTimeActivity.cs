@@ -5,19 +5,18 @@ using BusinessTime;
 
 namespace BusinessTime.Activities
 {
-    /// <summary>Category names used to group the activities in the Studio panel.</summary>
+    /// <summary>Category names used to group the activities and their properties in Studio.</summary>
     internal static class Categories
     {
         internal const string BusinessTime = "Business Time";
-        internal const string Calendar = "Business Time/Calendar";
 
-        internal const string CalendarProperties = "Calendar";
+        internal const string Calendar = "Calendar";
         internal const string Input = "Input";
         internal const string Output = "Output";
         internal const string Options = "Options";
     }
 
-    /// <summary>Convenience helpers for arguments that a workflow may simply have left unbound.</summary>
+    /// <summary>Convenience helpers for arguments a workflow may simply have left unbound.</summary>
     internal static class ArgumentExtensions
     {
         internal static T GetValue<T>(this InArgument<T> argument, ActivityContext context) =>
@@ -30,49 +29,42 @@ namespace BusinessTime.Activities
     }
 
     /// <summary>
-    /// Shared behaviour for the activities: every one of them needs a calendar, and every one of them
-    /// resolves it the same way.
+    /// Shared behaviour for the calculating activities: each one needs a calendar, and each one finds it the
+    /// same way.
     /// </summary>
-    /// <remarks>
-    /// These activities derive from <see cref="NativeActivity{TResult}"/> rather than <c>CodeActivity</c>
-    /// because only a native context can read the execution properties that
-    /// <see cref="BusinessCalendarScope"/> publishes.
-    /// </remarks>
     /// <typeparam name="TResult">Type of the activity's <c>Result</c> argument.</typeparam>
-    public abstract class BusinessTimeActivity<TResult> : NativeActivity<TResult>
+    public abstract class BusinessTimeActivity<TResult> : CodeActivity<TResult>
     {
         /// <summary>
-        /// The calendar to use. When it is left empty the activity falls back to the surrounding
-        /// <see cref="BusinessCalendarScope"/>, then to <see cref="Schedule"/>, and finally to a
-        /// Monday-Friday 09:00-17:00 week in the machine's time zone.
+        /// The calendar to calculate with, usually the output of a <c>Create Business Calendar</c> or
+        /// <c>Load Business Calendar</c> activity.
         /// </summary>
-        [Category(Categories.CalendarProperties)]
+        [Category(Categories.Calendar)]
         [DisplayName("Calendar")]
-        [Description("Business calendar to use. Leave empty to inherit the surrounding Business Calendar Scope, or to fall back to the Schedule property.")]
+        [Description("The calendar to calculate with, for example the calendar variable produced by Create Business Calendar. " +
+                     "Leave it empty to use the Working week property instead.")]
         public InArgument<BusinessCalendar> Calendar { get; set; }
 
         /// <summary>
-        /// A schedule string such as <c>Mon-Fri 09:00-17:00</c>, used only when no calendar is supplied and
-        /// there is no surrounding scope. Convenient for a quick calculation that needs no holidays.
+        /// A working week written out in full, for a quick calculation that needs no holidays.
         /// </summary>
-        [Category(Categories.CalendarProperties)]
-        [DisplayName("Schedule")]
-        [Description("Shorthand working week, for example 'Mon-Fri 09:00-17:00'. Used only when no Calendar is supplied and there is no surrounding scope.")]
+        [Category(Categories.Calendar)]
+        [DisplayName("Working week")]
+        [Description("A working week for when no Calendar is supplied, for example \"Mon-Fri 09:00-17:00\". " +
+                     "Other examples: \"Mon-Fri 09:00-12:00,13:00-17:00\" for a lunch break, " +
+                     "\"Mon-Thu 08:00-16:30; Fri 08:00-14:00\" for a short Friday, \"Daily 00:00-24:00\" for around the clock. " +
+                     "Holidays need a Calendar. Defaults to Mon-Fri 09:00-17:00.")]
         public InArgument<string> Schedule { get; set; }
 
         /// <summary>
-        /// Resolves the calendar for this execution: the explicit argument first, then the surrounding
-        /// scope, then the shorthand schedule, and finally the default working week.
+        /// Resolves the calendar: the supplied one first, then the working week, then a Monday to Friday
+        /// nine to five in the robot's own time zone.
         /// </summary>
-        protected BusinessCalendar ResolveCalendar(NativeActivityContext context)
+        protected BusinessCalendar ResolveCalendar(CodeActivityContext context)
         {
             BusinessCalendar supplied = Calendar.GetValue(context);
             if (supplied != null)
                 return supplied;
-
-            BusinessCalendar scoped = BusinessCalendarScope.FindCalendar(context);
-            if (scoped != null)
-                return scoped;
 
             string schedule = Schedule.GetValue(context);
             if (!string.IsNullOrWhiteSpace(schedule))
@@ -80,14 +72,5 @@ namespace BusinessTime.Activities
 
             return BusinessCalendar.Default;
         }
-
-        /// <summary>Runs the activity and publishes its <c>Result</c>.</summary>
-        protected sealed override void Execute(NativeActivityContext context)
-        {
-            Result.Set(context, Calculate(context));
-        }
-
-        /// <summary>Performs the calculation and returns the value for the <c>Result</c> argument.</summary>
-        protected abstract TResult Calculate(NativeActivityContext context);
     }
 }

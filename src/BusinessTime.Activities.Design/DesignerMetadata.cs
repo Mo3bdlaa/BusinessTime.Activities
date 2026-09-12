@@ -22,21 +22,21 @@ namespace BusinessTime.Activities.Design
             {
                 var builder = new AttributeTableBuilder();
 
-                Attach(builder, typeof(BusinessCalendarScope), typeof(BusinessCalendarScopeDesigner));
+                // The activities that build calendars carry the calendar icon.
+                Attach(builder, typeof(CreateBusinessCalendar), typeof(InlineCalendarActivityDesigner));
+                Attach(builder, typeof(LoadBusinessCalendar), typeof(InlineCalendarActivityDesigner));
+                Attach(builder, typeof(SaveBusinessCalendar), typeof(InlineCalendarActivityDesigner));
 
-                Attach(builder, typeof(CreateBusinessCalendar), typeof(BusinessCalendarActivityDesigner));
-                Attach(builder, typeof(LoadBusinessCalendar), typeof(BusinessCalendarActivityDesigner));
-                Attach(builder, typeof(SaveBusinessCalendar), typeof(BusinessCalendarActivityDesigner));
-
-                Attach(builder, typeof(AddBusinessTime), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(SubtractBusinessTime), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(GetBusinessTimeBetween), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(CountBusinessDays), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(IsBusinessTime), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(GetBusinessDayInfo), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(SnapToBusinessTime), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(GetNextBusinessDay), typeof(BusinessTimeActivityDesigner));
-                Attach(builder, typeof(GetWorkingIntervals), typeof(BusinessTimeActivityDesigner));
+                // The ones that calculate carry the clock.
+                Attach(builder, typeof(AddBusinessTime), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(SubtractBusinessTime), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(GetBusinessTimeBetween), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(CountBusinessDays), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(IsBusinessTime), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(GetBusinessDayInfo), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(SnapToBusinessTime), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(GetNextBusinessDay), typeof(InlineActivityDesigner));
+                Attach(builder, typeof(GetWorkingIntervals), typeof(InlineActivityDesigner));
 
                 MetadataStore.AddAttributeTable(builder.CreateTable());
             }

@@ -2,56 +2,74 @@ using System;
 using System.Activities;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using BusinessTime;
 
 namespace BusinessTime.Activities
 {
     /// <summary>
-    /// Builds a business calendar from a schedule string, a time zone and a list of holidays.
+    /// Builds the calendar every other activity calculates with: the working week, the time zone it is
+    /// written in, and the days nobody works.
     /// </summary>
     /// <remarks>
-    /// This is the quickest way to standardise working hours across a process: one activity at the start of
-    /// the workflow, its result stored in a variable, and every later calculation pointed at that variable.
+    /// Drop this at the start of the process, keep the result in a variable, and point the other activities
+    /// at that variable.
     /// </remarks>
     [DisplayName("Create Business Calendar")]
-    [Description("Builds a business calendar from a working week, a time zone and a list of holidays.")]
+    [Description("Builds a business calendar from a working week, a time zone and a list of holidays. Usually the first Business Time activity in a process.")]
     public sealed class CreateBusinessCalendar : CodeActivity<BusinessCalendar>
     {
-        /// <summary>Working week, for example <c>Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00</c>.</summary>
+        /// <summary>The recurring working week.</summary>
         [Category(Categories.Input)]
-        [DisplayName("Schedule")]
-        [Description("Working week, for example 'Mon-Fri 09:00-17:00' or 'Mon-Thu 08:00-16:30; Fri 08:00-14:00'. Defaults to Mon-Fri 09:00-17:00.")]
+        [DisplayName("Working week")]
+        [Description("The working week. Examples: \"Mon-Fri 09:00-17:00\"; " +
+                     "\"Mon-Fri 09:00-12:00,13:00-17:00\" for a lunch break; " +
+                     "\"Mon-Thu 08:00-16:30; Fri 08:00-14:00\" for a short Friday; " +
+                     "\"Mon-Fri 09:00-17:00; Sat 09:00-13:00\" to open on Saturday mornings; " +
+                     "\"Daily 00:00-24:00\" for around the clock; \"Mon-Fri 22:00-06:00\" for a night shift. " +
+                     "Days you never mention are days off. Defaults to Mon-Fri 09:00-17:00.")]
         public InArgument<string> Schedule { get; set; }
 
-        /// <summary>Time zone the working hours are expressed in.</summary>
+        /// <summary>The zone the working hours are written in.</summary>
         [Category(Categories.Input)]
         [DisplayName("Time zone")]
-        [Description("Time zone the hours are expressed in, for example 'Europe/Berlin' or 'W. Europe Standard Time'. Leave empty to use the robot's own time zone.")]
+        [Description("The zone the working hours are written in, named by a city. Pick MachineLocal to follow the robot's own clock, " +
+                     "or Custom to type an identifier into the Time zone id property below.")]
+        public CommonTimeZone TimeZone { get; set; }
+
+        /// <summary>An explicit time zone identifier, for zones not in the drop-down.</summary>
+        [Category(Categories.Input)]
+        [DisplayName("Time zone id")]
+        [Description("Only needed when Time zone is set to Custom. Examples: \"Europe/Oslo\", \"Asia/Kolkata\", " +
+                     "\"Central Asia Standard Time\". Both the IANA and the Windows spellings work.")]
         public InArgument<string> TimeZoneId { get; set; }
 
         /// <summary>Dates that are not worked.</summary>
         [Category(Categories.Input)]
         [DisplayName("Holidays")]
-        [Description("Dates that are not worked. Accepts any collection of dates, such as a list built from a queue or a spreadsheet column.")]
+        [Description("Dates nobody works, as any collection of dates. Examples: " +
+                     "new DateTime(){ new DateTime(2026,12,25), new DateTime(2026,12,26) }; " +
+                     "or a column read from a spreadsheet, holidayTable.AsEnumerable().Select(Function(r) r.Field(Of DateTime)(\"Date\")).ToList().")]
         public InArgument<IEnumerable<DateTime>> Holidays { get; set; }
 
         /// <summary>Dates that are not worked and repeat every year.</summary>
         [Category(Categories.Input)]
-        [DisplayName("Annual holidays")]
-        [Description("Dates that are not worked and repeat every year. Only the month and day are used.")]
+        [DisplayName("Holidays every year")]
+        [Description("Dates that repeat every year, so they need setting only once. Only the month and day are used, " +
+                     "for example new DateTime(){ new DateTime(2000,1,1), new DateTime(2000,12,25) } for New Year and Christmas.")]
         public InArgument<IEnumerable<DateTime>> AnnualHolidays { get; set; }
 
-        /// <summary>Length of a nominal business day.</summary>
+        /// <summary>Length of one nominal business day.</summary>
         [Category(Categories.Options)]
         [DisplayName("Hours per business day")]
-        [Description("Length of one business day, used whenever a duration is given in days. Leave at zero to derive it from the schedule.")]
+        [Description("How long one business day is, used whenever a duration is given in days. " +
+                     "Leave at 0 to work it out from the working week, which is usually what you want: " +
+                     "a Mon-Fri 09:00-17:00 week gives 8. Set 7.5 if a day is seven and a half hours.")]
         public InArgument<double> HoursPerBusinessDay { get; set; }
 
         /// <summary>Label used in logs.</summary>
         [Category(Categories.Options)]
         [DisplayName("Name")]
-        [Description("Optional label for the calendar, shown in logs and error messages.")]
+        [Description("An optional label shown in logs and error messages, for example \"Support desk\". Nothing depends on it.")]
         public InArgument<string> Name { get; set; }
 
         /// <inheritdoc />
@@ -63,7 +81,7 @@ namespace BusinessTime.Activities
             if (!string.IsNullOrWhiteSpace(schedule))
                 builder.WithSchedule(schedule);
 
-            builder.WithTimeZone(TimeZones.Resolve(TimeZoneId.GetValue(context)));
+            builder.WithTimeZone(CommonTimeZones.Resolve(TimeZone, TimeZoneId.GetValue(context)));
             builder.WithName(Name.GetValue(context));
 
             double dayLength = HoursPerBusinessDay.GetValue(context);
@@ -85,32 +103,35 @@ namespace BusinessTime.Activities
         }
     }
 
-    /// <summary>Loads a business calendar from a JSON file or from JSON text.</summary>
+    /// <summary>Loads a calendar from a JSON file or from JSON text.</summary>
     /// <remarks>
     /// Keeping the calendar in a file lets several processes share one definition, and lets the business
-    /// update holidays without anyone republishing a package.
+    /// change the holidays without anyone republishing a package.
     /// </remarks>
     [DisplayName("Load Business Calendar")]
-    [Description("Loads a business calendar from a JSON file or from JSON text.")]
+    [Description("Loads a business calendar from a JSON file, or from JSON text held in an Orchestrator asset.")]
     public sealed class LoadBusinessCalendar : CodeActivity<BusinessCalendar>
     {
         /// <summary>Path to a calendar JSON file.</summary>
         [Category(Categories.Input)]
         [DisplayName("File path")]
-        [Description("Path to a calendar JSON file. Either this or Json must be supplied.")]
+        [Description("Path to a calendar JSON file, for example \"Data\\calendar.json\" or " +
+                     "Path.Combine(Environment.CurrentDirectory, \"Data\", \"calendar.json\"). Supply this or Json.")]
         public InArgument<string> FilePath { get; set; }
 
-        /// <summary>Calendar JSON text, for when the definition comes from an asset or a queue item.</summary>
+        /// <summary>Calendar JSON text.</summary>
         [Category(Categories.Input)]
         [DisplayName("Json")]
-        [Description("Calendar JSON text, for when the definition comes from an Orchestrator asset instead of a file.")]
+        [Description("Calendar JSON text, for when the definition comes from an Orchestrator asset rather than a file. " +
+                     "The smallest useful document is {\"week\": \"Mon-Fri 09:00-17:00\", \"timeZone\": \"UTC\"}.")]
         public InArgument<string> Json { get; set; }
 
-        /// <summary>Overrides the time zone recorded in the document.</summary>
+        /// <summary>Replaces the zone recorded in the document.</summary>
         [Category(Categories.Options)]
         [DisplayName("Time zone override")]
-        [Description("Optional time zone that replaces the one recorded in the document.")]
-        public InArgument<string> TimeZoneId { get; set; }
+        [Description("Optional. Replaces the time zone recorded in the document, for running one shared calendar " +
+                     "against another region. Leave at MachineLocal to keep what the document says.")]
+        public CommonTimeZone TimeZoneOverride { get; set; }
 
         /// <inheritdoc />
         protected override BusinessCalendar Execute(CodeActivityContext context)
@@ -125,30 +146,30 @@ namespace BusinessTime.Activities
                 ? BusinessCalendarSerializer.FromJson(json)
                 : BusinessCalendarSerializer.LoadFile(path);
 
-            string timeZoneId = TimeZoneId.GetValue(context);
-            return string.IsNullOrWhiteSpace(timeZoneId)
+            // MachineLocal is the property's default, so it is read as "leave the document alone".
+            return TimeZoneOverride == CommonTimeZone.MachineLocal
                 ? calendar
-                : calendar.ToBuilder().WithTimeZone(timeZoneId).Build();
+                : calendar.ToBuilder().WithTimeZone(CommonTimeZones.Resolve(TimeZoneOverride, null)).Build();
         }
     }
 
-    /// <summary>Writes a business calendar to a JSON file.</summary>
+    /// <summary>Writes a calendar out to a JSON file.</summary>
     [DisplayName("Save Business Calendar")]
-    [Description("Writes a business calendar to a JSON file.")]
+    [Description("Writes a business calendar to a JSON file, so it can be shared between processes or edited by the business.")]
     public sealed class SaveBusinessCalendar : CodeActivity
     {
         /// <summary>The calendar to write.</summary>
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("Calendar")]
-        [Description("The calendar to write.")]
+        [Description("The calendar to write, for example the variable produced by Create Business Calendar.")]
         public InArgument<BusinessCalendar> Calendar { get; set; }
 
-        /// <summary>Destination file path. Missing folders are created.</summary>
+        /// <summary>Destination path.</summary>
         [RequiredArgument]
         [Category(Categories.Input)]
         [DisplayName("File path")]
-        [Description("Destination file path. Missing folders are created.")]
+        [Description("Where to write it, for example \"Data\\calendar.json\". Missing folders are created.")]
         public InArgument<string> FilePath { get; set; }
 
         /// <inheritdoc />
