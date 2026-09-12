@@ -1,6 +1,7 @@
 using System;
 using System.Activities;
 using System.Collections.Generic;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -68,6 +69,22 @@ namespace BusinessTime.Activities.Tests
         {
             // Twelve activities plus the Business Calendar Scope. A change here should be a deliberate one.
             Assert.Equal(13, PublicActivities.Count());
+        }
+
+        [Fact]
+        public void TheActivitiesAskTheHostForTheWorkflowRuntimeItActuallyShips()
+        {
+            // Studio and the Robot ship System.Activities 6.0.0.0. The runtime resolves an assembly forward
+            // but never backward, so compiling against any higher version - the UiPath.Workflow builds on
+            // nuget.org carry 6.0.3.0 - makes every activity fail to load in a real project with
+            // "Could not load file or assembly 'System.Activities'". Nothing else here would notice, because
+            // the tests supply their own copy of the runtime.
+            AssemblyName reference = typeof(AddBusinessTime).Assembly
+                .GetReferencedAssemblies()
+                .SingleOrDefault(name => name.Name == "System.Activities");
+
+            Assert.NotNull(reference);
+            Assert.Equal(new Version(6, 0, 0, 0), reference.Version);
         }
 
         [Fact]
