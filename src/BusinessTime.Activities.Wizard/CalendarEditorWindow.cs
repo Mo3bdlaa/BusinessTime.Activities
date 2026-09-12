@@ -419,7 +419,9 @@ namespace BusinessTime.Activities.Wizard
         private void Show(BusinessCalendar calendar)
         {
             _name.Text = calendar.Name ?? string.Empty;
-            _timeZone.SelectedItem = TimeZoneChoice.For(_zones, calendar.TimeZone.Id);
+            _timeZone.SelectedItem = calendar.FollowsMachineTimeZone
+                ? _zones[0]
+                : TimeZoneChoice.For(_zones, calendar.TimeZone.Id);
             _hoursPerDay.Text = calendar.HoursPerBusinessDay.TotalHours.ToString("0.##", CultureInfo.InvariantCulture);
 
             for (int i = 0; i < 7; i++)
@@ -444,9 +446,14 @@ namespace BusinessTime.Activities.Wizard
         {
             var selected = _timeZone.SelectedItem as TimeZoneChoice ?? _zones[0];
 
-            var builder = new BusinessCalendarBuilder()
-                .WithName(_name.Text)
-                .WithTimeZone(selected.Id);
+            var builder = new BusinessCalendarBuilder().WithName(_name.Text);
+
+            // The system default entry records that the hours follow whichever robot runs the process,
+            // rather than pinning them to the zone this machine happens to be in.
+            if (selected.IsSystemDefault)
+                builder.WithMachineTimeZone();
+            else
+                builder.WithTimeZone(selected.Id);
 
             var week = new List<KeyValuePair<DayOfWeek, DaySchedule>>();
             for (int i = 0; i < 7; i++)

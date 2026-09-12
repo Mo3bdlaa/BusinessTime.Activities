@@ -23,6 +23,7 @@ namespace BusinessTime
         private TimeZoneInfo _timeZone = TimeZoneInfo.Local;
         private TimeSpan? _hoursPerBusinessDay;
         private string _name;
+        private bool _followsMachineTimeZone;
 
         /// <summary>Creates an empty builder seeded with a Monday-Friday 09:00-17:00 week.</summary>
         public BusinessCalendarBuilder()
@@ -39,6 +40,7 @@ namespace BusinessTime
             _timeZone = calendar.TimeZone;
             _hoursPerBusinessDay = calendar.HoursPerBusinessDay;
             _name = calendar.Name;
+            _followsMachineTimeZone = calendar.FollowsMachineTimeZone;
             _specialDays.AddRange(calendar.SpecialDays);
         }
 
@@ -80,6 +82,18 @@ namespace BusinessTime
         public BusinessCalendarBuilder WithTimeZone(TimeZoneInfo timeZone)
         {
             _timeZone = timeZone ?? TimeZoneInfo.Local;
+            _followsMachineTimeZone = false;
+            return this;
+        }
+
+        /// <summary>
+        /// Says the hours mean local time wherever the calendar runs, so every robot uses its own zone
+        /// rather than the one the calendar was written on.
+        /// </summary>
+        public BusinessCalendarBuilder WithMachineTimeZone()
+        {
+            _followsMachineTimeZone = true;
+            _timeZone = TimeZoneInfo.Local;
             return this;
         }
 
@@ -128,6 +142,6 @@ namespace BusinessTime
 
         /// <summary>Builds the calendar.</summary>
         public BusinessCalendar Build() =>
-            new BusinessCalendar(_schedule, _specialDays, _timeZone, _hoursPerBusinessDay, _name);
+            new BusinessCalendar(_schedule, _specialDays, _timeZone, _hoursPerBusinessDay, _name, _followsMachineTimeZone);
     }
 }

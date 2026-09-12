@@ -45,16 +45,22 @@ namespace BusinessTime
         /// average working day of <paramref name="schedule"/>.
         /// </param>
         /// <param name="name">Optional label for logging.</param>
+        /// <param name="followsMachineTimeZone">
+        /// True when the hours mean local time wherever the calendar runs, rather than one fixed place.
+        /// <paramref name="timeZone"/> is then ignored and the machine's own zone is used.
+        /// </param>
         public BusinessCalendar(
             WeeklySchedule schedule = null,
             IEnumerable<SpecialDay> specialDays = null,
             TimeZoneInfo timeZone = null,
             TimeSpan? hoursPerBusinessDay = null,
-            string name = null)
+            string name = null,
+            bool followsMachineTimeZone = false)
         {
             Schedule = schedule ?? WeeklySchedule.Standard;
             _specialDays = (specialDays ?? Enumerable.Empty<SpecialDay>()).Where(day => day != null).ToArray();
-            TimeZone = timeZone ?? TimeZoneInfo.Local;
+            FollowsMachineTimeZone = followsMachineTimeZone;
+            TimeZone = followsMachineTimeZone ? TimeZoneInfo.Local : timeZone ?? TimeZoneInfo.Local;
             Name = name;
 
             if (hoursPerBusinessDay.HasValue && hoursPerBusinessDay.Value <= TimeSpan.Zero)
@@ -77,6 +83,17 @@ namespace BusinessTime
 
         /// <summary>Time zone the working hours are expressed in.</summary>
         public TimeZoneInfo TimeZone { get; }
+
+        /// <summary>
+        /// True when the hours mean local time wherever the calendar runs, so a robot in another country
+        /// works its own nine to five rather than the one the calendar was written in.
+        /// </summary>
+        /// <remarks>
+        /// This is what a calendar file records, not a zone: each robot resolves its own on loading. Leave
+        /// it false, the usual case, when the hours belong to one place — a support desk in Berlin is open
+        /// Berlin hours no matter which robot is asking.
+        /// </remarks>
+        public bool FollowsMachineTimeZone { get; }
 
         /// <summary>Length of one nominal business day, used to convert between days and hours.</summary>
         public TimeSpan HoursPerBusinessDay => _hoursPerBusinessDay;
@@ -479,7 +496,7 @@ namespace BusinessTime
             var builder = new StringBuilder();
             builder.Append(string.IsNullOrWhiteSpace(Name) ? "calendar" : "calendar '" + Name + "'");
             builder.Append(" [").Append(Schedule).Append(']');
-            builder.Append(" tz=").Append(TimeZone.Id);
+            builder.Append(" tz=").Append(FollowsMachineTimeZone ? "machine (" + TimeZone.Id + ")" : TimeZone.Id);
             builder.Append(" day=").Append(FormatHours(_hoursPerBusinessDay));
             if (_specialDays.Length > 0)
                 builder.Append(" specialDays=").Append(_specialDays.Length);

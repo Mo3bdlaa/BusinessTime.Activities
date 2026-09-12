@@ -36,7 +36,7 @@ namespace BusinessTime.Activities.Wizard
             {
                 new TimeZoneChoice(
                     TimeZoneInfo.Local.Id,
-                    "System default — " + Describe(TimeZoneInfo.Local),
+                    "System default — follows each robot (now " + Describe(TimeZoneInfo.Local) + ")",
                     true)
             };
 

@@ -20,6 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The ribbon button's icon, addressed by pack URI. Regenerate with tools/make-icon.py. -->
+    <Resource Include="Resources\calendar.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Studio supplies both of these at run time, so neither travels in the package. -->
     <PackageReference Include="UiPath.Activities.Api" Version="24.10.1" PrivateAssets="all" />
     <PackageReference Include="UiPath.Workflow" Version="6.0.0-20240401-07" PrivateAssets="all" />

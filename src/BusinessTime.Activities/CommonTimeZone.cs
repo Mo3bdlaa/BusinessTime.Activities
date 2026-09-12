@@ -15,7 +15,10 @@ namespace BusinessTime.Activities
     /// </remarks>
     public enum CommonTimeZone
     {
-        /// <summary>Whatever zone the robot itself is set to.</summary>
+        /// <summary>
+        /// Whatever zone the robot running the process is set to. A calendar saved with this follows each
+        /// robot rather than fixing the hours to one place.
+        /// </summary>
         MachineLocal = 0,
 
         /// <summary>Coordinated Universal Time.</summary>
@@ -214,6 +217,19 @@ namespace BusinessTime.Activities
                 default:
                     return TimeZones.Resolve(WindowsIds[choice]);
             }
+        }
+
+        /// <summary>
+        /// Applies the chosen zone to a calendar being built. <see cref="CommonTimeZone.MachineLocal"/>
+        /// records that the hours follow the machine, rather than pinning them to the zone this happens to
+        /// be running in.
+        /// </summary>
+        internal static void ApplyTo(BusinessCalendarBuilder builder, CommonTimeZone choice, string customId)
+        {
+            if (choice == CommonTimeZone.MachineLocal && string.IsNullOrWhiteSpace(customId))
+                builder.WithMachineTimeZone();
+            else
+                builder.WithTimeZone(Resolve(choice, customId));
         }
 
         /// <summary>The identifier behind a drop-down choice, for logging and for the tests.</summary>

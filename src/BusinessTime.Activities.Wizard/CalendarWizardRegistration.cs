@@ -15,6 +15,13 @@ namespace BusinessTime.Activities.Wizard
     /// </remarks>
     public sealed class CalendarWizardRegistration : IRegisterWorkflowDesignApi
     {
+        /// <summary>
+        /// The ribbon button's icon, a calendar page, carried inside this assembly so nothing has to be
+        /// installed alongside it.
+        /// </summary>
+        private const string IconUri =
+            "pack://application:,,,/BusinessTime.Activities.Wizard;component/Resources/calendar.png";
+
         /// <summary>Registers the wizard.</summary>
         public void Initialize(IWorkflowDesignApi api)
         {
@@ -25,6 +32,7 @@ namespace BusinessTime.Activities.Wizard
                 wizards.WizardDefinitions.Add(new WizardDefinition
                 {
                     DisplayName = "Business Calendar",
+                    IconUri = IconUri,
                     Tooltip = "Create and maintain the business calendar file this process reads: " +
                               "the working week, the time zone, and the holidays, half days and shutdowns.",
                     MinimizeBeforeRun = false,
