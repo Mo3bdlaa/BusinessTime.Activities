@@ -4,18 +4,25 @@ The activity package, built and checked in so it can be installed into Studio wi
 
 | | |
 | --- | --- |
-| File | `BusinessTime.Activities.1.0.0.nupkg` |
-| Version | 1.0.0 |
-| Built from | `d9e8c890cfe9b6e6902ce34d6884c6319ec06ad4` |
-| SHA-256 | `22344638772b7d8d3d6a880d8504a9f938af2501c0ea916545420346e924f451` |
+| File | `BusinessTime.Activities.1.0.1.nupkg` |
+| Version | 1.0.1 |
+| Built from | `9588fa8442e71691bcaeb02bae5e4247e6e0d92c` |
+| SHA-256 | `5389af01b87eb7f66fca0c7321c84a2b04e3e38740a3c202067f0235d0847c84` |
 
 ## Installing it into Studio
 
-1. Copy `BusinessTime.Activities.1.0.0.nupkg` into a folder. A network share works well for a team.
+1. Copy `BusinessTime.Activities.1.0.1.nupkg` into a folder. A network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
 3. Find **BusinessTime.Activities** under that source and install it.
 
 To publish it to Orchestrator instead, upload the same file to a tenant feed.
+
+## Why there are no dependencies on the cross-platform side
+
+Studio and the Robot supply the workflow runtime themselves. A package that also depended on
+`UiPath.Workflow` would install a second copy of `System.Activities` beside the host's, and the loader would
+fail to bind it — so the workflow runtime is referenced at compile time only, and the `net6.0` assets declare
+no dependencies at all.
 
 ## What is inside
 
