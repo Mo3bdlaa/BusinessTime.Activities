@@ -56,6 +56,15 @@ jobs:
             exit 1
           fi
 
+          # Studio and the Robot provide the workflow runtime. Depending on it here would install a second
+          # copy beside the host's, which breaks loading System.Activities in a Windows project.
+          nuspec=$(unzip -p "$package" "*.nuspec")
+          if grep -q "UiPath.Workflow" <<<"$nuspec"; then
+            echo "::error::The package must not depend on UiPath.Workflow; the host provides the workflow runtime"
+            echo "$nuspec"
+            exit 1
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: activity-package

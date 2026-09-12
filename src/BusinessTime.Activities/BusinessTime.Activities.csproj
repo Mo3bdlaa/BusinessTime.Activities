@@ -27,7 +27,13 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="UiPath.Workflow" Version="6.0.3" />
+    <!--
+      Compile time only. Studio and the Robot bring their own workflow runtime, so an activity package that
+      shipped one too would put a second System.Activities beside the host's and leave the loader unable to
+      bind either. PrivateAssets keeps it out of the package's dependencies, which is also what stops the
+      compiler and expression-language packages it drags along from landing in the consuming project.
+    -->
+    <PackageReference Include="UiPath.Workflow" Version="6.0.3" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
