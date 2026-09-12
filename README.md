@@ -271,7 +271,8 @@ The runtime and the designer are separate things, and they run in different plac
 | --- | --- | --- |
 | `BusinessTime.Core` | `netstandard2.0`, `net461`, `net6.0` | anywhere .NET runs |
 | `BusinessTime.Activities` | `net461`, `net6.0` | Windows-legacy, Windows and cross-platform robots alike |
-| `BusinessTime.Activities.Design` | `net461` | Studio only, at design time |
+| `BusinessTime.Activities.Design` | `net461` | Windows-legacy Studio, at design time |
+| `BusinessTime.Activities.Wizard` | `net6.0-windows` | Modern Studio, at design time |
 
 **The activities are cross-platform.** The `net6.0` assets run on a Linux robot as they do on Windows, and
 the runtime assembly deliberately references nothing from WPF — there is a test that fails the build if it
@@ -297,6 +298,16 @@ Designers are attached through `IRegisterMetadata`, which Studio calls once when
 registration were ever to fail it is swallowed and the stock designers apply, so a designer problem can
 never stop the activities themselves from loading.
 
+## The calendar editor in Studio's ribbon
+
+The package registers a **Business Calendar** wizard, so a calendar file can be built and maintained from
+Studio rather than by hand: the working week a day at a time, the time zone, and a grid of holidays, half
+days and shutdowns, saved as JSON wherever you point it.
+
+It is design time only and Windows only, and it ships with the `net6.0` assets because modern Studio runs on
+.NET 8 and never loads .NET Framework ones. Every date and shift typed into it is read by the same engine
+the activities use, so the editor has no parsing rules of its own to disagree with them.
+
 ## Building and installing
 
 The workflow runtime comes from UiPath's official feed, which `NuGet.config` already points at. It is a
@@ -305,7 +316,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.2.0.nupkg`](packages/BusinessTime.Activities.1.2.0.nupkg), so Studio can
+[`packages/BusinessTime.Activities.1.3.0.nupkg`](packages/BusinessTime.Activities.1.3.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -317,7 +328,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.2.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.1.3.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 

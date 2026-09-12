@@ -50,6 +50,7 @@ jobs:
           expect "lib/net461/BusinessTime.Core.dll"
           expect "lib/net6.0/BusinessTime.Activities.dll"
           expect "lib/net6.0/BusinessTime.Core.dll"
+          expect "lib/net6.0/BusinessTime.Activities.Wizard.dll"
 
           if grep -q "lib/net6.0/BusinessTime.Activities.Design.dll" <<<"$contents"; then
             echo "::error::The Windows-only designers must not ship with the cross-platform assets"
