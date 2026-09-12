@@ -304,9 +304,19 @@ The package registers a **Business Calendar** wizard, so a calendar file can be 
 Studio rather than by hand: the working week a day at a time, the time zone, and a grid of holidays, half
 days and shutdowns, saved as JSON wherever you point it.
 
+It opens on `Data\BusinessCalendar.json` in the project when there is one, so the usual case needs no
+browsing at all. When there is not, it offers that path for a new file and leaves everything else alone:
+**Open…** picks up a calendar kept somewhere else, **Save as…** writes one somewhere new, and **Save** asks
+before replacing a file the editor did not open, so a calendar somebody else maintains cannot be lost by
+pressing Save out of habit.
+
+Dates are chosen from a date picker rather than typed, so no spelling of a date can reach the file; ticking
+**Every year** keeps only the day and month. Time zones are listed by offset as well as name —
+`(UTC+01:00) W. Europe Standard Time` — with the machine's own zone offered first.
+
 It is design time only and Windows only, and it ships with the `net6.0` assets because modern Studio runs on
-.NET 8 and never loads .NET Framework ones. Every date and shift typed into it is read by the same engine
-the activities use, so the editor has no parsing rules of its own to disagree with them.
+.NET 8 and never loads .NET Framework ones. Every date and shift it accepts is read by the same engine the
+activities use, so the editor has no parsing rules of its own to disagree with them.
 
 ## Building and installing
 
@@ -316,7 +326,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.3.0.nupkg`](packages/BusinessTime.Activities.1.3.0.nupkg), so Studio can
+[`packages/BusinessTime.Activities.1.4.0.nupkg`](packages/BusinessTime.Activities.1.4.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -328,7 +338,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.3.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.1.4.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 

@@ -79,3 +79,60 @@ namespace BusinessTime.Tests
         }
     }
 }
+
+namespace BusinessTime.Tests
+{
+    /// <summary>
+    /// Covers building an entry from picked values, which is what the calendar editor's date columns hand
+    /// over once a date is chosen rather than typed.
+    /// </summary>
+    public class SpecialDayValueTests
+    {
+        [Fact]
+        public void APickedDateClosesTheDay()
+        {
+            SpecialDay day = SpecialDay.FromValues(new DateTime(2026, 12, 25), name: "Christmas Day");
+
+            Assert.True(day.IsNonWorking);
+            Assert.Equal("Christmas Day", day.Name);
+            Assert.Equal(new DateTime(2026, 12, 25), day.Through);
+        }
+
+        [Fact]
+        public void PickedHoursMakeItAHalfDay()
+        {
+            SpecialDay day = SpecialDay.FromValues(new DateTime(2026, 12, 24), hours: "09:00-13:00", name: "Christmas Eve");
+
+            Assert.False(day.IsNonWorking);
+            Assert.Equal(TimeSpan.FromHours(4), day.Shifts[0].Duration);
+        }
+
+        [Fact]
+        public void ASecondPickedDateMakesItAShutdown()
+        {
+            SpecialDay day = SpecialDay.FromValues(
+                new DateTime(2026, 12, 27), new DateTime(2026, 12, 31), "Winter shutdown");
+
+            Assert.True(day.Covers(new DateTime(2026, 12, 29)));
+            Assert.False(day.Covers(new DateTime(2027, 1, 2)));
+        }
+
+        [Fact]
+        public void AnAnnualEntryIgnoresTheYearThatWasPicked()
+        {
+            // A picker always supplies some year; for a repeating entry only the month and day matter.
+            SpecialDay day = SpecialDay.FromValues(new DateTime(2026, 1, 1), name: "New Year's Day", isAnnual: true);
+
+            Assert.True(day.Covers(new DateTime(2030, 1, 1)));
+            Assert.True(day.Covers(new DateTime(2019, 1, 1)));
+            Assert.False(day.Covers(new DateTime(2030, 1, 2)));
+        }
+
+        [Fact]
+        public void AnEmptyHoursColumnMeansClosed()
+        {
+            Assert.True(SpecialDay.FromValues(new DateTime(2026, 12, 25), hours: "  ").IsNonWorking);
+            Assert.True(SpecialDay.FromValues(new DateTime(2026, 12, 25), hours: "off").IsNonWorking);
+        }
+    }
+}
