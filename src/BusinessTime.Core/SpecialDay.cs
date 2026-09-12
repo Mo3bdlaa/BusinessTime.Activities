@@ -100,6 +100,32 @@ namespace BusinessTime
                 isAnnual);
         }
 
+        /// <summary>
+        /// Builds an entry from values already typed, as a date picker supplies them, so nothing has to be
+        /// spelled out as text and no date format can be misread.
+        /// </summary>
+        /// <param name="date">The date. For an annual entry only the month and day are used.</param>
+        /// <param name="through">The last date of a run, or <c>null</c> for a single date.</param>
+        /// <param name="name">What to call it. Optional.</param>
+        /// <param name="hours">The hours worked, for example <c>09:00-13:00</c>. Empty or <c>off</c> closes the day.</param>
+        /// <param name="isAnnual">True when the entry repeats every year.</param>
+        public static SpecialDay FromValues(DateTime date, DateTime? through = null, string name = null, string hours = null, bool isAnnual = false)
+        {
+            IReadOnlyList<TimeRange> shifts = string.IsNullOrWhiteSpace(hours)
+                ? null
+                : DaySchedule.Parse(hours).Shifts;
+
+            if (shifts != null && shifts.Count == 0)
+                shifts = null;
+
+            return new SpecialDay(
+                date,
+                string.IsNullOrWhiteSpace(name) ? null : name.Trim(),
+                shifts,
+                through,
+                isAnnual);
+        }
+
         private static DateTime ParseDate(string text, string field)
         {
             if (string.IsNullOrWhiteSpace(text))

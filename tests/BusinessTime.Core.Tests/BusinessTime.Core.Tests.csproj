@@ -17,4 +17,12 @@
     <ProjectReference Include="..\..\src\BusinessTime.Core\BusinessTime.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      The wizard assembly is WPF and cannot be loaded on a build agent that is not Windows, but the time
+      zone list it shows is ordinary code. Compiling that one file in here puts it under test anyway.
+    -->
+    <Compile Include="..\..\src\BusinessTime.Activities.Wizard\TimeZoneChoice.cs" Link="Wizard\TimeZoneChoice.cs" />
+  </ItemGroup>
+
 </Project>
