@@ -28,12 +28,16 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <!--
-      Compile time only. Studio and the Robot bring their own workflow runtime, so an activity package that
-      shipped one too would put a second System.Activities beside the host's and leave the loader unable to
-      bind either. PrivateAssets keeps it out of the package's dependencies, which is also what stops the
-      compiler and expression-language packages it drags along from landing in the consuming project.
+      Compile time only: Studio and the Robot bring their own workflow runtime, and PrivateAssets keeps this
+      out of the package's dependencies so none of it lands in the consuming project.
+
+      The version matters more than it looks. This must be a build UiPath actually ships, from their official
+      feed, because the assembly version of System.Activities is what the activities are compiled to ask the
+      host for. The UiPath.Workflow packages on nuget.org carry System.Activities 6.0.3.0, which no Studio
+      has; the runtime resolves assemblies forward but never backward, so a project on the shipped 6.0.0.0
+      fails to load them with "Could not load file or assembly 'System.Activities, Version=6.0.3.0'".
     -->
-    <PackageReference Include="UiPath.Workflow" Version="6.0.3" PrivateAssets="all" />
+    <PackageReference Include="UiPath.Workflow" Version="6.0.0-20240401-07" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

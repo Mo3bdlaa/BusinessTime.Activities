@@ -4,14 +4,14 @@ The activity package, built and checked in so it can be installed into Studio wi
 
 | | |
 | --- | --- |
-| File | `BusinessTime.Activities.1.0.1.nupkg` |
-| Version | 1.0.1 |
-| Built from | `9588fa8442e71691bcaeb02bae5e4247e6e0d92c` |
-| SHA-256 | `5389af01b87eb7f66fca0c7321c84a2b04e3e38740a3c202067f0235d0847c84` |
+| File | `BusinessTime.Activities.1.0.2.nupkg` |
+| Version | 1.0.2 |
+| Built from | `6c26336bff063128f1ad929dd99bd131c5ae7cfd` |
+| SHA-256 | `e2f826e4cb84857aff97ae45a4c8af189d290c2a3385a85ab9facdd57764d3bc` |
 
 ## Installing it into Studio
 
-1. Copy `BusinessTime.Activities.1.0.1.nupkg` into a folder. A network share works well for a team.
+1. Copy `BusinessTime.Activities.1.0.2.nupkg` into a folder. A network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
 3. Find **BusinessTime.Activities** under that source and install it.
 
@@ -19,10 +19,14 @@ To publish it to Orchestrator instead, upload the same file to a tenant feed.
 
 ## Why there are no dependencies on the cross-platform side
 
-Studio and the Robot supply the workflow runtime themselves. A package that also depended on
-`UiPath.Workflow` would install a second copy of `System.Activities` beside the host's, and the loader would
-fail to bind it — so the workflow runtime is referenced at compile time only, and the `net6.0` assets declare
-no dependencies at all.
+Studio and the Robot supply the workflow runtime themselves, so it is referenced at compile time only and
+the `net6.0` assets declare no dependencies at all.
+
+The version they are compiled against matters just as much. The activities ask the host for
+`System.Activities 6.0.0.0`, which is what Studio ships; the runtime resolves an assembly forward but never
+backward, so building against a higher version makes every activity fail to load with *Could not load file
+or assembly 'System.Activities'*. That is why the workflow runtime is taken from UiPath's official feed
+rather than from nuget.org, whose `UiPath.Workflow` builds carry `6.0.3.0` and are not what any Studio has.
 
 ## What is inside
 

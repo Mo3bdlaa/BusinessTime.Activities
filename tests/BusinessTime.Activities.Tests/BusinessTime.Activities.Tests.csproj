@@ -11,7 +11,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageReference Include="UiPath.Workflow" Version="6.0.3" />
+    <!-- The same workflow runtime Studio ships, so the tests exercise what the robot will. -->
+    <PackageReference Include="UiPath.Workflow" Version="6.0.0-20240401-07" />
   </ItemGroup>
 
   <ItemGroup>
