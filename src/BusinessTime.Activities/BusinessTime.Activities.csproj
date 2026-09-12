@@ -49,7 +49,7 @@
     .nupkg into Studio or Orchestrator is enough to get a working activity pack.
   -->
   <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessTimeCore;IncludeBusinessTimeDesigners</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessTimeCore;IncludeBusinessTimeDesigners;IncludeBusinessTimeWizard</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <Target Name="IncludeBusinessTimeCore">
@@ -68,6 +68,22 @@
   <PropertyGroup>
     <DesignAssembly>$(MSBuildThisFileDirectory)..\BusinessTime.Activities.Design\bin\$(Configuration)\net461\BusinessTime.Activities.Design.dll</DesignAssembly>
   </PropertyGroup>
+
+  <!--
+    The ribbon wizard is design time only and Windows only, but modern Studio runs on .NET 8 and never
+    loads the .NET Framework assets, so it travels with the net6.0 ones instead.
+  -->
+  <PropertyGroup>
+    <WizardAssembly>$(MSBuildThisFileDirectory)..\BusinessTime.Activities.Wizard\bin\$(Configuration)\net6.0-windows\BusinessTime.Activities.Wizard.dll</WizardAssembly>
+  </PropertyGroup>
+
+  <Target Name="IncludeBusinessTimeWizard" Condition="'$(TargetFramework)' == 'net6.0'">
+    <Warning Condition="!Exists('$(WizardAssembly)')"
+             Text="BusinessTime.Activities.Wizard.dll was not found at $(WizardAssembly), so this package will ship without the calendar wizard. Build the solution before packing." />
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(WizardAssembly)" Condition="Exists('$(WizardAssembly)')" />
+    </ItemGroup>
+  </Target>
 
   <Target Name="IncludeBusinessTimeDesigners" Condition="'$(TargetFramework)' == 'net461'">
     <Warning Condition="!Exists('$(DesignAssembly)')"
