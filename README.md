@@ -273,6 +273,13 @@ never stop the activities themselves from loading.
 
 ## Building and installing
 
+A built package is checked in at
+[`packages/BusinessTime.Activities.1.0.0.nupkg`](packages/BusinessTime.Activities.1.0.0.nupkg), so Studio can
+install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
+Every push also builds it on CI and attaches it to the run.
+
+To build it yourself:
+
 ```bash
 dotnet build BusinessTime.Activities.sln -c Release
 dotnet test  BusinessTime.Activities.sln -c Release
@@ -325,6 +332,7 @@ for the JSON format.
 ## Repository layout
 
 ```
+packages/                      the built activity package, ready to install
 src/BusinessTime.Core          the calendar model and the calculation engine
 src/BusinessTime.Activities    the UiPath activities
 tests/BusinessTime.Core.Tests  engine tests
