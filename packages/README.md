@@ -4,14 +4,14 @@ The activity package, built and checked in so it can be installed into Studio wi
 
 | | |
 | --- | --- |
-| File | `BusinessTime.Activities.1.1.0.nupkg` |
-| Version | 1.1.0 |
-| Built from | `f6f928961b25442e24eb2f59a38c9756a5d241a4` |
-| SHA-256 | `450928ed76b2fbbcb16658f10456e5b0d6ea0224c47e9588d98fb088c073a7ac` |
+| File | `BusinessTime.Activities.1.2.0.nupkg` |
+| Version | 1.2.0 |
+| Built from | `2f18ebea39ba26d8708dc24ded4200717d905396` |
+| SHA-256 | `f33d5a235053ac414a81f0c33ddc045ef607e3007faf6f2eea20ca9923ca0767` |
 
 ## Installing it into Studio
 
-1. Copy `BusinessTime.Activities.1.1.0.nupkg` into a folder. A network share works well for a team.
+1. Copy `BusinessTime.Activities.1.2.0.nupkg` into a folder. A network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
 3. Find **BusinessTime.Activities** under that source and install it.
 
