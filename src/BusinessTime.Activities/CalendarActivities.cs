@@ -48,7 +48,7 @@ namespace BusinessTime.Activities
         [DisplayName("Holidays")]
         [Description("Dates nobody works, as any collection of dates. Examples: " +
                      "new DateTime(){ new DateTime(2026,12,25), new DateTime(2026,12,26) }; " +
-                     "or a column read from a spreadsheet, holidayTable.AsEnumerable().Select(Function(r) r.Field(Of DateTime)(\"Date\")).ToList().")]
+                     "or a column read from a spreadsheet, holidayTable.AsEnumerable().Select(Function(r) r.Field(Of DateTime)(\"Date\")).ToList(). Use Special days instead when the holidays need names.")]
         public InArgument<IEnumerable<DateTime>> Holidays { get; set; }
 
         /// <summary>Dates that are not worked and repeat every year.</summary>
@@ -57,6 +57,20 @@ namespace BusinessTime.Activities
         [Description("Dates that repeat every year, so they need setting only once. Only the month and day are used, " +
                      "for example new DateTime(){ new DateTime(2000,1,1), new DateTime(2000,12,25) } for New Year and Christmas.")]
         public InArgument<IEnumerable<DateTime>> AnnualHolidays { get; set; }
+
+        /// <summary>
+        /// Named holidays, half days and shutdowns, for everything the plain date lists cannot express.
+        /// </summary>
+        [Category(Categories.Input)]
+        [DisplayName("Special days")]
+        [Description("Named holidays, half days and shutdowns. Build them with the SpecialDay helpers, for example: " +
+                     "New SpecialDay() { " +
+                     "SpecialDay.Holiday(New DateTime(2026,12,25), \"Christmas Day\"), " +
+                     "SpecialDay.AnnualHoliday(1, 1, \"New Year's Day\"), " +
+                     "SpecialDay.CustomHours(New DateTime(2026,12,24), \"09:00-13:00\", \"Christmas Eve\"), " +
+                     "SpecialDay.Shutdown(New DateTime(2026,12,27), New DateTime(2026,12,31), \"Winter shutdown\") }. " +
+                     "These are applied after Holidays, so a named entry wins over a plain date for the same day.")]
+        public InArgument<IEnumerable<SpecialDay>> SpecialDays { get; set; }
 
         /// <summary>Length of one nominal business day.</summary>
         [Category(Categories.Options)]
@@ -97,6 +111,14 @@ namespace BusinessTime.Activities
             {
                 foreach (DateTime holiday in annualHolidays)
                     builder.AddAnnualHoliday(holiday.Month, holiday.Day);
+            }
+
+            // Added last, so a named entry takes precedence over a plain date covering the same day.
+            IEnumerable<SpecialDay> specialDays = SpecialDays.GetValue(context);
+            if (specialDays != null)
+            {
+                foreach (SpecialDay specialDay in specialDays)
+                    builder.AddSpecialDay(specialDay);
             }
 
             return builder.Build();

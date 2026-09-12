@@ -87,6 +87,24 @@ Four kinds of exception cover what businesses actually do:
 Where two exceptions cover the same date, the one added last wins, so a skeleton-crew day can be carved out
 of a shutdown.
 
+### Naming them in Studio
+
+**Create Business Calendar** takes plain dates in **Holidays**, which is enough when nobody needs to know
+why a day is closed. Its **Special days** input covers the rest, and keeps the names:
+
+```vb
+New SpecialDay() {
+    SpecialDay.AnnualHoliday(1, 1, "New Year's Day"),
+    SpecialDay.Holiday(New DateTime(2026, 12, 25), "Christmas Day"),
+    SpecialDay.CustomHours(New DateTime(2026, 12, 24), "09:00-13:00", "Christmas Eve"),
+    SpecialDay.Shutdown(New DateTime(2026, 12, 27), New DateTime(2026, 12, 31), "Winter shutdown")
+}
+```
+
+Those names come back out of **Is Business Time**, **Get Business Day Info** and **Get Next Business Day** as
+`SpecialDayName`, and they survive **Save Business Calendar**, so a calendar built in Studio says everything
+a hand-written calendar file can.
+
 ### Calendar files
 
 A calendar can live in a JSON file that several processes share and that the business can edit without anyone
@@ -287,7 +305,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.1.0.nupkg`](packages/BusinessTime.Activities.1.1.0.nupkg), so Studio can
+[`packages/BusinessTime.Activities.1.2.0.nupkg`](packages/BusinessTime.Activities.1.2.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -299,7 +317,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.1.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.1.2.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
