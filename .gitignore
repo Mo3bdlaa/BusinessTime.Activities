@@ -15,8 +15,10 @@ artifacts/
 
 # NuGet
 *.nupkg
-packages/
 project.lock.json
+
+# The built activity package is checked in, so it can be installed into Studio without building first.
+!packages/*.nupkg
 
 # OS
 .DS_Store
