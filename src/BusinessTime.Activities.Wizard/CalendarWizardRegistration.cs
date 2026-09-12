@@ -19,8 +19,12 @@ namespace BusinessTime.Activities.Wizard
         /// The ribbon button's icon, a calendar page, carried inside this assembly so nothing has to be
         /// installed alongside it.
         /// </summary>
-        private const string IconUri =
-            "pack://application:,,,/BusinessTime.Activities.Wizard;component/Resources/calendar.png";
+        /// <remarks>
+        /// The API documents this as the location of the icon resource in the providing assembly, so it is
+        /// given as a resource path relative to this one rather than as an absolute pack URI, which Studio
+        /// may not be able to resolve from the context it loads package assemblies into.
+        /// </remarks>
+        private const string IconUri = "/BusinessTime.Activities.Wizard;component/Resources/calendar.png";
 
         /// <summary>Registers the wizard.</summary>
         public void Initialize(IWorkflowDesignApi api)

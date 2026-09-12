@@ -104,7 +104,7 @@ namespace BusinessTime.Activities.Tests
             BusinessCalendar loaded = WorkflowHarness.RunFor(new LoadBusinessCalendar
             {
                 Json = WorkflowHarness.Arg("{ \"week\": \"Mon-Fri 08:00-16:00\", \"timeZone\": \"UTC\" }"),
-                TimeZoneOverride = CommonTimeZone.Berlin
+                TimeZoneOverride = CommonTimeZone.UTC_plus_01_Berlin
             });
 
             Assert.Equal(TimeZones.Resolve("W. Europe Standard Time").Id, loaded.TimeZone.Id);
