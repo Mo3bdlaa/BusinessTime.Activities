@@ -9,6 +9,9 @@
     <Description>UiPath activities for working-hours arithmetic: add and subtract business days and hours, measure business time between two moments, and describe a working week, its holidays and its exceptions in one shared calendar.</Description>
     <PackageTags>UiPath;RPA;activities;business-days;working-hours;calendar;sla</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>package-icon.png</PackageIcon>
+    <PackageReleaseNotes>Working-hours arithmetic for UiPath: add and subtract business days and hours, measure business time between two moments, and maintain one shared calendar of the working week, its holidays, half days and shutdowns — from the activities or from the Business Calendar editor in Studio's ribbon.</PackageReleaseNotes>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,6 +45,8 @@
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <!-- Shown beside the package in Studio's package manager and on the Marketplace listing. -->
+    <None Include="package-icon.png" Pack="true" PackagePath="\" />
     <!--
       The ribbon icon travels as a file beside the wizard assembly, not only embedded in it: naming it by
       path is the one way to reach it that does not ask WPF to resolve this assembly by name, which Studio's
