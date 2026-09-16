@@ -116,6 +116,52 @@ namespace BusinessTime.Activities.Tests
                 "These activities have no inline layout in InlineActivityDesigner.cs: " + string.Join(", ", missing));
         }
 
+        private static string DesignSource(string fileName)
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory != null && !Directory.Exists(Path.Combine(directory.FullName, "src")))
+                directory = directory.Parent;
+            Assert.NotNull(directory);
+
+            string path = Path.Combine(directory.FullName, "src", "BusinessTime.Activities.Design", fileName);
+            Assert.True(File.Exists(path), $"Expected {path}.");
+            return File.ReadAllText(path);
+        }
+
+        [Fact]
+        public void EveryActivityHasAnIconOfItsOwn()
+        {
+            // One shared icon would leave the pack unreadable on a canvas, so each activity names its own.
+            string source = DesignSource("Glyphs.cs");
+
+            string[] missing = PublicActivities
+                .Select(type => type.Name)
+                .Where(name => !source.Contains("\"" + name + "\""))
+                .OrderBy(name => name)
+                .ToArray();
+
+            Assert.True(missing.Length == 0, "These activities have no icon in Glyphs.cs: " + string.Join(", ", missing));
+        }
+
+        [Fact]
+        public void EveryResultIsDescribedInItsOwnTerms()
+        {
+            // Result arrives from the base class with no category and no description; the designer supplies
+            // both, and a shared description would be no better than none.
+            string source = DesignSource("DesignerMetadata.cs");
+
+            string[] missing = PublicActivities
+                // Activity<T> shadows ActivityWithResult.Result, so asking by name is ambiguous.
+                .Where(type => type.GetProperties().Any(property => property.Name == "Result"))
+                .Select(type => type.Name)
+                .Where(name => !source.Contains("typeof(" + name + ")"))
+                .OrderBy(name => name)
+                .ToArray();
+
+            Assert.True(missing.Length == 0, "These activities have no Result description: " + string.Join(", ", missing));
+            Assert.Contains("CategoryAttribute(\"Output\")", source);
+        }
+
         [Fact]
         public void TheRuntimeAssemblyDoesNotDragInWpf()
         {

@@ -127,7 +127,6 @@ namespace BusinessTime.Activities.Design
         /// <summary>Creates the designer.</summary>
         public InlineActivityDesigner()
         {
-            Icon = Glyphs.Clock;
         }
 
         /// <summary>Builds the card once the designer knows which activity it belongs to.</summary>
@@ -142,6 +141,9 @@ namespace BusinessTime.Activities.Design
             {
                 if (!(newItem is ModelItem item) || item.ItemType == null)
                     return;
+
+                // Each activity carries its own mark, so the pack is one family and still tells itself apart.
+                Icon = Glyphs.For(item.ItemType.Name);
 
                 if (!Layouts.TryGetValue(item.ItemType.Name, out InlineField[] fields))
                     return;
@@ -208,8 +210,6 @@ namespace BusinessTime.Activities.Design
                 ExpressionType = valueType,
                 UseLocationExpression = isOutput,
                 HintText = field.Hint,
-                MaxLines = 1,
-                MinLines = 1,
                 Margin = new Thickness(0, 2, 0, 2),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -252,16 +252,6 @@ namespace BusinessTime.Activities.Design
             }
 
             return false;
-        }
-    }
-
-    /// <summary>The same card, with the calendar icon, for the activities that build calendars.</summary>
-    public sealed class InlineCalendarActivityDesigner : InlineActivityDesigner
-    {
-        /// <summary>Creates the designer.</summary>
-        public InlineCalendarActivityDesigner()
-        {
-            Icon = Glyphs.Calendar;
         }
     }
 }

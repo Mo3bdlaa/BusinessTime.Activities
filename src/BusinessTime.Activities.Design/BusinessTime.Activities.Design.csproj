@@ -2,23 +2,31 @@
 
   <PropertyGroup>
     <!--
-      Design time only. Studio is a Windows WPF application, so this assembly is Windows-only by nature
-      however the runtime is targeted; the activities themselves stay cross-platform. The UI is built in
-      code rather than XAML, because the WPF markup compiler only runs on Windows and this project has to
-      build anywhere the rest of the solution does.
+      Design time only, and Windows only, like any Studio UI. Two targets because the two generations of
+      Studio load different things: a Windows-legacy project loads the .NET Framework assets, a modern one
+      runs on .NET 8 and loads the .NET assets and never the others.
     -->
-    <TargetFramework>net461</TargetFramework>
+    <TargetFrameworks>net461;net6.0-windows</TargetFrameworks>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>BusinessTime.Activities.Design</RootNamespace>
     <AssemblyName>BusinessTime.Activities.Design</AssemblyName>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BusinessTime.Activities\BusinessTime.Activities.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--
+    .NET Framework keeps the whole designer in System.Activities.Presentation, and ships it as a reference
+    assembly, so this target needs nothing beyond the framework.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <Reference Include="System.Activities" />
     <Reference Include="System.Activities.Presentation" />
@@ -26,6 +34,16 @@
     <Reference Include="PresentationCore" />
     <Reference Include="WindowsBase" />
     <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <!--
+    .NET splits the designer across two assemblies, and publishes neither, so this target compiles against
+    the stubs in stubs/ and lets Studio supply the real ones. Private="false" keeps them out of the package.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
+    <PackageReference Include="UiPath.Workflow" Version="6.0.0-20240401-07" PrivateAssets="all" />
+    <ProjectReference Include="..\..\stubs\System.Activities.Metadata\System.Activities.Metadata.csproj" Private="false" />
+    <ProjectReference Include="..\..\stubs\System.Activities.Presentation\System.Activities.Presentation.csproj" Private="false" />
   </ItemGroup>
 
 </Project>

@@ -78,6 +78,7 @@
   -->
   <PropertyGroup>
     <DesignAssembly>$(MSBuildThisFileDirectory)..\BusinessTime.Activities.Design\bin\$(Configuration)\net461\BusinessTime.Activities.Design.dll</DesignAssembly>
+    <ModernDesignAssembly>$(MSBuildThisFileDirectory)..\BusinessTime.Activities.Design\bin\$(Configuration)\net6.0-windows\BusinessTime.Activities.Design.dll</ModernDesignAssembly>
   </PropertyGroup>
 
   <!--
@@ -91,8 +92,11 @@
   <Target Name="IncludeBusinessTimeWizard" Condition="'$(TargetFramework)' == 'net6.0'">
     <Warning Condition="!Exists('$(WizardAssembly)')"
              Text="BusinessTime.Activities.Wizard.dll was not found at $(WizardAssembly), so this package will ship without the calendar wizard. Build the solution before packing." />
+    <Warning Condition="!Exists('$(ModernDesignAssembly)')"
+             Text="The .NET build of BusinessTime.Activities.Design.dll was not found at $(ModernDesignAssembly), so a modern Studio will show the stock designers. Build the solution before packing." />
     <ItemGroup>
       <BuildOutputInPackage Include="$(WizardAssembly)" Condition="Exists('$(WizardAssembly)')" />
+      <BuildOutputInPackage Include="$(ModernDesignAssembly)" Condition="Exists('$(ModernDesignAssembly)')" />
     </ItemGroup>
   </Target>
 

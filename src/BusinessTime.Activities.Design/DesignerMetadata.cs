@@ -1,5 +1,6 @@
 using System;
 using System.Activities.Presentation.Metadata;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 
@@ -22,21 +23,22 @@ namespace BusinessTime.Activities.Design
             {
                 var builder = new AttributeTableBuilder();
 
-                // The activities that build calendars carry the calendar icon.
-                Attach(builder, typeof(CreateBusinessCalendar), typeof(InlineCalendarActivityDesigner));
-                Attach(builder, typeof(LoadBusinessCalendar), typeof(InlineCalendarActivityDesigner));
-                Attach(builder, typeof(SaveBusinessCalendar), typeof(InlineCalendarActivityDesigner));
+                foreach (KeyValuePair<Type, string> entry in Results)
+                {
+                    Attach(builder, entry.Key);
 
-                // The ones that calculate carry the clock.
-                Attach(builder, typeof(AddBusinessTime), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(SubtractBusinessTime), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(GetBusinessTimeBetween), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(CountBusinessDays), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(IsBusinessTime), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(GetBusinessDayInfo), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(SnapToBusinessTime), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(GetNextBusinessDay), typeof(InlineActivityDesigner));
-                Attach(builder, typeof(GetWorkingIntervals), typeof(InlineActivityDesigner));
+                    // Result arrives from CodeActivity<T> with no category of its own, which lands it under
+                    // Misc, away from the outputs it belongs with.
+                    builder.AddCustomAttributes(
+                        entry.Key,
+                        "Result",
+                        new CategoryAttribute("Output"),
+                        new DisplayNameAttribute("Result"),
+                        new DescriptionAttribute(entry.Value));
+                }
+
+                // Save Business Calendar writes a file rather than returning anything.
+                Attach(builder, typeof(SaveBusinessCalendar));
 
                 MetadataStore.AddAttributeTable(builder.CreateTable());
             }
@@ -46,9 +48,37 @@ namespace BusinessTime.Activities.Design
             }
         }
 
-        private static void Attach(AttributeTableBuilder builder, Type activity, Type designer)
+        /// <summary>What each activity's <c>Result</c> holds, said in its own terms.</summary>
+        private static readonly Dictionary<Type, string> Results = new Dictionary<Type, string>
         {
-            builder.AddCustomAttributes(activity, new DesignerAttribute(designer));
+            [typeof(CreateBusinessCalendar)] =
+                "The calendar you have just described. Keep it in a variable and hand it to the Calendar property of the activities that follow.",
+            [typeof(LoadBusinessCalendar)] =
+                "The calendar read from the file or the JSON, ready to hand to the activities that follow.",
+
+            [typeof(AddBusinessTime)] =
+                "The moment you land on once the working time has been added, for example Monday 14:00 for Friday 16:30 plus four business hours.",
+            [typeof(SubtractBusinessTime)] =
+                "The moment the work would have had to start to finish on time.",
+            [typeof(GetBusinessTimeBetween)] =
+                "The working time separating the two moments, as a TimeSpan, for example 05:45:00. Closed hours, weekends and holidays cost nothing.",
+            [typeof(CountBusinessDays)] =
+                "How many working days the period covers, counting both end dates.",
+            [typeof(IsBusinessTime)] =
+                "True when that exact moment is inside working hours. Use Is working day to tell a closed day from merely being out of hours.",
+            [typeof(GetBusinessDayInfo)] =
+                "True when the date is worked at all. The other outputs describe it: when it opens, when it closes, and how much work it holds.",
+            [typeof(SnapToBusinessTime)] =
+                "The moment moved onto the calendar, or the moment itself when it was already working time.",
+            [typeof(GetNextBusinessDay)] =
+                "The moment work starts on that day, never midnight, so it can be used directly as a start time.",
+            [typeof(GetWorkingIntervals)] =
+                "The working windows inside the period, each with a Start, an End and a Duration."
+        };
+
+        private static void Attach(AttributeTableBuilder builder, Type activity)
+        {
+            builder.AddCustomAttributes(activity, new DesignerAttribute(typeof(InlineActivityDesigner)));
         }
     }
 }

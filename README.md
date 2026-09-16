@@ -288,17 +288,24 @@ the runtime assembly deliberately references nothing from WPF — there is a tes
 ever starts to. Time zones are resolved by identifier, so `Europe/Berlin` works on Linux and
 `W. Europe Standard Time` works on Windows, whichever the calendar was written with.
 
-**The designer is Windows-only, and cannot be otherwise.** Studio is a WPF application, so anything that
-draws on its canvas is Windows-only however the runtime is targeted. The design assembly ships alongside the
-`net461` assets, is never loaded by a robot, and is absent from the cross-platform assets, where Studio falls
-back to its stock designers.
+It is design time only and Windows only, and it is built twice: the .NET Framework assets carry the build a
+Windows-legacy Studio loads, the `net6.0` assets the build a modern one loads. The two generations split the
+designer across different assemblies — .NET Framework keeps it all in `System.Activities.Presentation`, .NET
+moves the metadata half into `System.Activities.Metadata` — so one build cannot serve both, and for a long
+while only the legacy one existed here, which is why a modern Studio showed the stock designers.
+
+Neither designer assembly is published by UiPath, so the .NET build compiles against the stubs in
+[`stubs/`](stubs/README.md) and Studio supplies the real ones. The stubs never ship.
 
 It is written in code rather than XAML so that the whole solution still builds on any operating system — the
 WPF markup compiler only runs on Windows. What it provides:
 
 - **The main inputs and outputs on the face of each activity**, so the common cases can be filled in without
   opening the properties panel. Everything else stays in the panel as usual.
-- **An icon** on each activity, so the pack reads as one set on the canvas.
+- **An icon for each activity** — a clock or a calendar page, marked in the corner with what the activity
+  does to it, so the pack reads as one family and each one is still told apart at a glance.
+- **`Result` under Output**, with a description of its own. It arrives from the base class with no category,
+  which otherwise leaves it under Misc, away from the outputs it belongs with.
 
 An activity the designer has no layout for falls back to the plain card, and a card that cannot be drawn at
 all leaves every property reachable from the panel, so nothing is ever stranded.
@@ -341,7 +348,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.0.0.nupkg`](packages/BusinessTime.Activities.1.0.0.nupkg), so Studio can
+[`packages/BusinessTime.Activities.1.1.0.nupkg`](packages/BusinessTime.Activities.1.1.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -353,7 +360,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.1.1.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
