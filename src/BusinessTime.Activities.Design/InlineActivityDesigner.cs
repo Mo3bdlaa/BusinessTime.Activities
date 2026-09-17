@@ -6,6 +6,7 @@ using System.Activities.Presentation.Model;
 using System.Activities.Presentation.View;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -122,45 +123,25 @@ namespace BusinessTime.Activities.Design
             }
         };
 
-        private readonly string _activityName;
-        private bool _built;
-
         /// <summary>
         /// Creates the designer for one activity.
         /// </summary>
         /// <remarks>
-        /// The icon is set here rather than when the model item arrives, because the activities panel asks a
-        /// designer for its icon without ever giving it one: an icon set later leaves the panel blank.
+        /// Both the icon and the card are built here rather than when a model item arrives: the activities
+        /// panel asks a designer type for its icon without ever giving it an activity, so anything set later
+        /// leaves the panel blank.
         /// </remarks>
-        protected InlineActivityDesigner(string activityName)
+        protected InlineActivityDesigner(Type activityType)
         {
-            _activityName = activityName;
-            Icon = Glyphs.For(activityName);
-        }
-
-        /// <summary>Builds the card once the designer knows which activity it belongs to.</summary>
-        protected override void OnModelItemChanged(object newItem)
-        {
-            base.OnModelItemChanged(newItem);
-
-            if (_built)
-                return;
-
             try
             {
-                if (!(newItem is ModelItem item) || item.ItemType == null)
-                    return;
+                Icon = Glyphs.For(activityType.Name);
 
-                DesignerMetadata.Trace("Drawing " + item.ItemType.Name + ".");
-
-                if (!Layouts.TryGetValue(item.ItemType.Name, out InlineField[] fields))
-                    return;
-
-                UIElement card = BuildCard(item.ItemType, fields);
-                if (card != null)
+                if (Layouts.TryGetValue(activityType.Name, out InlineField[] fields))
                 {
-                    Content = card;
-                    _built = true;
+                    UIElement card = BuildCard(activityType, fields);
+                    if (card != null)
+                        Content = card;
                 }
             }
             catch (Exception exception)
@@ -180,7 +161,7 @@ namespace BusinessTime.Activities.Design
             int row = 0;
             foreach (InlineField field in fields)
             {
-                PropertyInfo property = activityType.GetProperty(field.PropertyName);
+                PropertyInfo property = MostDerived(activityType, field.PropertyName);
                 if (property == null)
                     continue;
 
@@ -234,6 +215,33 @@ namespace BusinessTime.Activities.Design
             editor.SetBinding(ExpressionTextBox.OwnerActivityProperty, new Binding("ModelItem"));
 
             return editor;
+        }
+
+        /// <summary>
+        /// Finds a property by name, preferring the one declared furthest down the hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// <c>Activity&lt;TResult&gt;</c> shadows <c>ActivityWithResult.Result</c>, so every activity here
+        /// has two properties called Result and asking for it by name alone throws.
+        /// </remarks>
+        private static PropertyInfo MostDerived(Type activityType, string propertyName)
+        {
+            PropertyInfo[] matches = activityType.GetProperties()
+                .Where(property => property.Name == propertyName)
+                .ToArray();
+
+            if (matches.Length <= 1)
+                return matches.FirstOrDefault();
+
+            return matches.OrderByDescending(property => Depth(property.DeclaringType)).First();
+        }
+
+        private static int Depth(Type type)
+        {
+            int depth = 0;
+            for (Type walk = type; walk != null; walk = walk.BaseType)
+                depth++;
+            return depth;
         }
 
         private static bool TryDescribeArgument(Type propertyType, out Type valueType, out bool isOutput)
