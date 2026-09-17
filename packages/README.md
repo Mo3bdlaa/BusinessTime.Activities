@@ -7,8 +7,8 @@ The activity package, built and checked in so it can be installed into Studio wi
 | Name in Studio | Shaker BusinessTime Activities |
 | File | `Shaker.BusinessTime.Activities.1.0.0.nupkg` |
 | Version | 1.0.0 |
-| Built from | `b91df2e785a0a6229ccb0222588d3fda1038b6e3` |
-| SHA-256 | `d184833f0ae08a9ecd6e82f73e9345281441ec903b8ce1567dbe8b42c8ce5541` |
+| Built from | `3d7ddd7cf61246068aea19e7f740b94c6505181f` |
+| SHA-256 | `aee76f1fa56f1a2badd383cc9a080cf783f7bf3320ffebfd268b94bd79284ad7` |
 
 ## Installing it into Studio
 
