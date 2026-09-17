@@ -630,4 +630,4 @@ samples/                       an example calendar file
 
 ## Licence
 
-[MIT](LICENSE) — Copyright (c) 2026 Mohamed Shaker. Use it, change it, ship it; keep the notice.
+[MIT](LICENSE) — Copyright (c) 2026 Mohammed Shaker. Use it, change it, ship it; keep the notice.
