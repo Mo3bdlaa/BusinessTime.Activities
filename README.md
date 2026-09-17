@@ -1,6 +1,6 @@
 # Shaker.BusinessTime.Activities
 
-[![Build](https://github.com/Mo3bdlaa/BusinessTime.Activities/actions/workflows/build.yml/badge.svg)](https://github.com/Mo3bdlaa/BusinessTime.Activities/actions/workflows/build.yml)
+[![Build](https://github.com/Mo3bdlaa/Shaker.BusinessTime.Activities/actions/workflows/build.yml/badge.svg)](https://github.com/Mo3bdlaa/Shaker.BusinessTime.Activities/actions/workflows/build.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 [![Version](https://img.shields.io/badge/nuget-1.0.0-blue)](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg)
 [![Targets](https://img.shields.io/badge/UiPath-Windows%20%C2%B7%20Cross--platform%20%C2%B7%20Legacy-blue)](#designers-and-platforms)

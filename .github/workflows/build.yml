@@ -159,7 +159,7 @@ jobs:
           `net461` for Windows-legacy projects, `net6.0` for Windows and cross-platform ones. The engine and
           the Studio designers travel inside the package, so one file is all Studio needs.
 
-          MIT licensed. See the [README](https://github.com/Mo3bdlaa/BusinessTime.Activities#readme) for
+          MIT licensed. See the [README](https://github.com/Mo3bdlaa/Shaker.BusinessTime.Activities#readme) for
           every property of every activity.
           NOTES
 
