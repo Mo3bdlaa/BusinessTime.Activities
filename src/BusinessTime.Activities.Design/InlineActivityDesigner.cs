@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Media;
 
 namespace BusinessTime.Activities.Design
 {
@@ -170,12 +169,13 @@ namespace BusinessTime.Activities.Design
 
                 grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+                // No colour of its own: Studio has a light theme and a dark one, and a label painted a
+                // fixed grey reads as washed out on whichever it was not chosen for.
                 var label = new TextBlock
                 {
                     Text = field.Label,
                     Margin = new Thickness(0, 4, 8, 4),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x44, 0x4D, 0x56))
+                    VerticalAlignment = VerticalAlignment.Center
                 };
                 Grid.SetRow(label, row);
                 Grid.SetColumn(label, 0);

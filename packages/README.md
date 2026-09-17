@@ -4,14 +4,14 @@ The activity package, built and checked in so it can be installed into Studio wi
 
 | | |
 | --- | --- |
-| File | `Shaker.BusinessTime.Activities.1.0.1.nupkg` |
-| Version | 1.0.1 |
-| Built from | `75350c12f765eaeb73a6412ce77d9b012c6c66e6` |
-| SHA-256 | `2bb4b378601458002bf12a4cbf2f21d936162cd3041e2e0c6312dc3b8beadb27` |
+| File | `Shaker.BusinessTime.Activities.1.0.2.nupkg` |
+| Version | 1.0.2 |
+| Built from | `c0b9f9d60031908192e0731f15d45e1d90a97583` |
+| SHA-256 | `c6657d43c84886e8b1d0a638b51776239a18f174563a01ebe1c694263f980171` |
 
 ## Installing it into Studio
 
-1. Copy `Shaker.BusinessTime.Activities.1.0.1.nupkg` into a folder. A network share works well for a team.
+1. Copy `Shaker.BusinessTime.Activities.1.0.2.nupkg` into a folder. A network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
 3. Find **Shaker.BusinessTime.Activities** under that source and install it.
 

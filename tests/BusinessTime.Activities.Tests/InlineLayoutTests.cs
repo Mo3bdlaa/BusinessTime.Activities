@@ -118,3 +118,26 @@ namespace BusinessTime.Activities.Tests
         }
     }
 }
+
+namespace BusinessTime.Activities.Tests
+{
+    /// <summary>Keeps the cards following Studio's theme rather than a colour chosen here.</summary>
+    public class CardThemeTests
+    {
+        [Fact]
+        public void TheCardsPaintNothingThemselves()
+        {
+            // Studio has a light theme and a dark one. A colour fixed here looks right in one and washed
+            // out in the other, which is exactly how the labels ended up grey on the dark theme.
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory != null && !Directory.Exists(Path.Combine(directory.FullName, "src")))
+                directory = directory.Parent;
+
+            string source = File.ReadAllText(Path.Combine(
+                directory.FullName, "src", "BusinessTime.Activities.Design", "InlineActivityDesigner.cs"));
+
+            Assert.DoesNotContain("Foreground", source);
+            Assert.DoesNotContain("Background", source);
+        }
+    }
+}
