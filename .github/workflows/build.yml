@@ -59,10 +59,18 @@ jobs:
           # The designers a modern Studio loads. The .NET Framework ones next to them serve legacy projects.
           expect "lib/net6.0/BusinessTime.Activities.Design.dll"
 
-          if grep -q "lib/net6.0/BusinessTime.Activities.Design.dll" <<<"$contents"; then
-            echo "::error::The Windows-only designers must not ship with the cross-platform assets"
-            exit 1
-          fi
+          # The stubs exist only to compile against Studio's own designer assemblies. Shipping a copy would
+          # shadow the real ones and break every designer in the package.
+          forbid() {
+            if grep -q "$1" <<<"$contents"; then
+              echo "::error::$1 must not ship in $package"
+              exit 1
+            fi
+          }
+
+          forbid "System.Activities.Presentation.dll"
+          forbid "System.Activities.Metadata.dll"
+          forbid "System.Activities.dll"
 
           # Studio and the Robot provide the workflow runtime. Depending on it here would install a second
           # copy beside the host's, which breaks loading System.Activities in a Windows project.
