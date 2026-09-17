@@ -17,14 +17,21 @@ that same definition.
 
 - [Describing working time](#describing-working-time)
   - [The schedule string](#the-schedule-string)
+  - [Time zones](#time-zones)
   - [Holidays, shutdowns and half days](#holidays-shutdowns-and-half-days)
   - [Calendar files](#calendar-files)
-- [Activities](#activities)
+- [Activities](#activities) — every property of every activity
+  - [At a glance](#at-a-glance)
+  - [Create](#create-business-calendar) · [Load](#load-business-calendar) · [Save](#save-business-calendar)
+  - [Add](#add-business-time) · [Subtract](#subtract-business-time) · [Between](#get-business-time-between) · [Count](#count-business-days)
+  - [Is Business Time](#is-business-time) · [Day Info](#get-business-day-info) · [Snap](#snap-to-business-time) · [Next Day](#get-next-business-day) · [Intervals](#get-working-intervals)
 - [How an activity finds its calendar](#how-an-activity-finds-its-calendar)
 - [Worked examples](#worked-examples)
 - [Rules the engine follows](#rules-the-engine-follows)
+- [The calendar editor in Studio's ribbon](#the-calendar-editor-in-studios-ribbon)
 - [Building and installing](#building-and-installing)
 - [Using the engine outside UiPath](#using-the-engine-outside-uipath)
+- [Licence](#licence)
 
 ---
 
@@ -149,38 +156,169 @@ A full example is in [`samples/support-desk-calendar.json`](samples/support-desk
 
 ## Activities
 
-All of them appear in the Studio panel under **Business Time**.
+Twelve activities, all under **Business Time** in the panel. Every calculating one takes the same two
+calendar properties, described once here rather than repeated in each table below:
 
-### Building calendars
+| Property | In/Out | Example | What it does |
+| --- | --- | --- | --- |
+| `Calendar` | In | `calendar` | The calendar to calculate with, usually from **Create Business Calendar**. |
+| `Working week` | In | `"Mon-Fri 09:00-17:00"` | Used only when `Calendar` is empty. No holidays. |
 
-| Activity | What it does |
-| --- | --- |
-| **Create Business Calendar** | Builds a calendar from a schedule string, a time zone and lists of holidays. |
-| **Load Business Calendar** | Reads a calendar from a JSON file or from JSON text (an Orchestrator asset, say). |
-| **Save Business Calendar** | Writes a calendar back out to JSON. |
+Leave both empty and you get Monday-Friday 09:00-17:00 in the robot's own zone, so an activity does
+something sensible the moment it is dropped.
 
-### Calculating
+### At a glance
 
-| Activity | Result | Also reports |
+| Activity | Answers | Result |
 | --- | --- | --- |
-| **Add Business Time** | `DateTime` | `ElapsedTime` — the wall clock time that passed, closed hours included |
-| **Subtract Business Time** | `DateTime` | `ElapsedTime` |
-| **Get Business Time Between** | `TimeSpan` | `BusinessDays`, `BusinessHours`, `WorkingDays` |
-| **Count Business Days** | `Int32` | |
-| **Is Business Time** | `Boolean` | `IsWorkingDay`, `SpecialDayName` |
-| **Get Business Day Info** | `Boolean` (is it worked) | `DayStart`, `DayEnd`, `WorkingTime`, `Shifts`, `SpecialDayName` |
-| **Snap To Business Time** | `DateTime` | `WasAdjusted` |
-| **Get Next Business Day** | `DateTime` | `DayEnd`, `WorkingTime`, `SpecialDayName` |
-| **Get Working Intervals** | `IList<BusinessTimeInterval>` | `TotalWorkingTime` |
+| Create Business Calendar | What counts as working time here? | `BusinessCalendar` |
+| Load Business Calendar | …the same, read from a file | `BusinessCalendar` |
+| Save Business Calendar | Write the calendar out | *(writes a file)* |
+| Add Business Time | When will this be done? | `DateTime` |
+| Subtract Business Time | When did it have to start? | `DateTime` |
+| Get Business Time Between | How long did we actually have? | `TimeSpan` |
+| Count Business Days | How many working days is that? | `Int32` |
+| Is Business Time | Are we open right now? | `Boolean` |
+| Get Business Day Info | What do this day's hours look like? | `Boolean` |
+| Snap To Business Time | Treat this as arriving when we open | `DateTime` |
+| Get Next Business Day | When do we next open? | `DateTime` |
+| Get Working Intervals | Which windows are available? | `IList(Of BusinessTimeInterval)` |
 
-**Add Business Time** and **Subtract Business Time** take `Days`, `Hours`, `Minutes` and `Duration` together
-and add them up, so "one day and a half" needs no arithmetic beforehand. The `Day handling` property decides
-what a *day* means:
+---
 
-- `AsWorkingHours` (the default) — a day is the calendar's hours per business day, and fractions are allowed.
-  Friday 14:00 + 1 day is Monday 14:00.
-- `AsWholeDays` — a day is a whole day on the calendar. The clock time is carried over untouched and only
-  non-working days are skipped, which is what a deadline of "three business days" usually means.
+### Create Business Calendar
+
+Describes the working week once. Keep the result in a variable and hand it to everything that follows.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Working week` | In | `"Mon-Fri 09:00-12:00,13:00-17:00; Sat 09:00-13:00"` |
+| `Time zone` | In | `UTC_plus_01_Berlin`, or `MachineLocal` to follow each robot |
+| `Time zone id` | In | `"Europe/Oslo"` — only when Time zone is `Custom` |
+| `Holidays` | In | `New DateTime() {New DateTime(2026,12,25)}` |
+| `Holidays every year` | In | `New DateTime() {New DateTime(2000,1,1)}` — month and day only |
+| `Special days` | In | `New SpecialDay() {SpecialDay.CustomHours(New DateTime(2026,12,24), "09:00-13:00", "Christmas Eve")}` |
+| `Hours per business day` | In | `7.5` — leave `0` to take it from the week |
+| `Name` | In | `"Support desk"` |
+| `Result` | **Out** | `calendar` |
+
+### Load Business Calendar
+
+The same calendar, read from a file several processes can share.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `File path` | In | `"Data\BusinessCalendar.json"` |
+| `Json` | In | JSON text, for an Orchestrator asset instead of a file |
+| `Time zone override` | In | `UTC_plus_09_Tokyo` — leave `MachineLocal` to keep what the file says |
+| `Result` | **Out** | `calendar` |
+
+### Save Business Calendar
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Calendar` | In *(required)* | `calendar` |
+| `File path` | In *(required)* | `"Data\BusinessCalendar.json"` — missing folders are created |
+
+### Add Business Time
+
+Moves a moment forward by working time. `Days`, `Hours`, `Minutes` and `Duration` are added together.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Date` | In *(required)* | `ticket.Created` |
+| `Days` | In | `3` |
+| `Hours` | In | `4` |
+| `Minutes` | In | `30` |
+| `Duration` | In | `TimeSpan.FromMinutes(15)` |
+| `Day handling` | In | `AsWorkingHours` (a day is the calendar's hours) or `AsWholeDays` (a whole day, clock time kept) |
+| `Result` | **Out** | `dueAt` |
+| `Elapsed time` | Out | `20:00:00` — real time crossed, closed hours included |
+
+> Friday 16:30 + 4 business hours on a 09:00-17:00 week → **Monday 12:30**.
+
+### Subtract Business Time
+
+The exact inverse: when did this have to start? Same properties as **Add Business Time**.
+
+> Due Wednesday 11:00, needs 6 business hours → started **Tuesday 13:00**.
+
+### Get Business Time Between
+
+The working time two moments are apart — the service-level measure.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `From` | In *(required)* | `ticket.Created` |
+| `To` | In *(required)* | `ticket.Answered` |
+| `Result` | **Out** | `05:45:00` |
+| `Business days` | Out | `0.766` — using the calendar's hours per business day |
+| `Business hours` | Out | `5.75` |
+| `Working days` | Out | `3` — working days the period touches |
+
+> A weekend in the middle costs nothing, so a Friday ticket is not penalised for it.
+
+### Count Business Days
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `From` | In *(required)* | `DateTime.Today` |
+| `To` | In *(required)* | `DateTime.Today.AddMonths(1)` |
+| `Result` | **Out** | `22` — both end dates counted |
+
+### Is Business Time
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Date` | In *(required)* | `DateTime.Now` |
+| `Result` | **Out** | `True` when that exact moment is inside working hours |
+| `Is working day` | Out | `False` on a holiday, whatever the time |
+| `Special day name` | Out | `"Christmas Day"`, or empty on an ordinary day |
+
+### Get Business Day Info
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Date` | In *(required)* | `New DateTime(2026,12,24)` |
+| `Result` | **Out** | `True` when the date is worked at all |
+| `Day start` | Out | `09:00` |
+| `Day end` | Out | `13:00` |
+| `Working time` | Out | `04:00:00` |
+| `Shifts` | Out | `"09:00-13:00"`, or `"off"` |
+| `Special day name` | Out | `"Christmas Eve"` |
+
+### Snap To Business Time
+
+Moves an out-of-hours moment onto the calendar, and leaves a working moment alone.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Date` | In *(required)* | `request.Received` |
+| `Direction` | In | `Forward` to the next opening, `Backward` to when work last stopped |
+| `Result` | **Out** | Sunday 10:00 → **Monday 09:00** |
+| `Was adjusted` | Out | `True` when it had to move — worth logging |
+
+### Get Next Business Day
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `Date` | In *(required)* | `DateTime.Today` — never itself the answer |
+| `Direction` | In | `Next` or `Previous` |
+| `Result` | **Out** | The moment work starts that day, never midnight |
+| `Day end` | Out | `17:00` |
+| `Working time` | Out | `08:00:00` |
+| `Special day name` | Out | `"Christmas Eve"` on a half day |
+
+### Get Working Intervals
+
+Every open window in a period — what a scheduler needs to place work.
+
+| Property | In/Out | Example |
+| --- | --- | --- |
+| `From` | In *(required)* | `DateTime.Now` |
+| `To` | In *(required)* | `DateTime.Now.AddDays(7)` |
+| `Result` | **Out** | `IList(Of BusinessTimeInterval)`, each with `Start`, `End`, `Duration` |
+| `Total working time` | Out | `05:45:00` — agrees with **Get Business Time Between** over the same period |
 
 ---
 
@@ -348,7 +486,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.1.1.nupkg`](packages/BusinessTime.Activities.1.1.1.nupkg), so Studio can
+[`packages/BusinessTime.Activities.1.0.0.nupkg`](packages/BusinessTime.Activities.1.0.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -360,7 +498,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.1.1.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
@@ -416,3 +554,9 @@ tests/BusinessTime.Activities.Tests
                                activity tests, run through the real workflow runtime
 samples/                       an example calendar file
 ```
+
+---
+
+## Licence
+
+[MIT](LICENSE) — Copyright (c) 2026 Mohamed Shaker. Use it, change it, ship it; keep the notice.
