@@ -134,29 +134,15 @@ jobs:
           checksum=$(sha256sum "$package" | cut -d' ' -f1)
           echo "Releasing $package ($checksum)"
 
-          # A version already released is left alone, unless the file checked in is no longer the file
-          # published under it: a release carrying a stale package is worse than no release, and the
-          # version is what people quote, so the release is replaced rather than renumbered.
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            published=$(mktemp -d)
-            gh release download "v$VERSION" --dir "$published" --pattern '*.nupkg' || true
-            if [ -n "$(ls -A "$published")" ] \
-              && [ "$(sha256sum "$published"/*.nupkg | cut -d' ' -f1)" = "$checksum" ]; then
-              echo "v$VERSION already carries this package; nothing to do."
-              exit 0
-            fi
-            echo "v$VERSION carries a different package; replacing it."
-            gh release delete "v$VERSION" --yes --cleanup-tag
-          fi
-
           cat > /tmp/notes.md <<'NOTES'
           Working-hours arithmetic for UiPath. Adding eight hours to Friday afternoon gives you Monday, not Saturday.
 
           ## Install
 
           Download the `.nupkg` below and put it in a folder. In Studio, open **Manage Packages → Settings**,
-          add that folder as a user-defined package source, then install **Shaker.BusinessTime.Activities**.
-          The activities appear under **Business Time** in the panel.
+          add that folder as a user-defined package source, then install **Shaker BusinessTime Activities**
+          (package id `Shaker.BusinessTime.Activities`). The activities appear under **Business Time** in
+          the panel.
 
           ## What is in it
 
@@ -177,7 +163,26 @@ jobs:
           every property of every activity.
           NOTES
 
+          title="v$VERSION — Shaker BusinessTime Activities"
+
+          # A version already released keeps its release, unless the file checked in is no longer the file
+          # published under it: a release carrying a stale package is worse than no release, and the version
+          # is what people quote, so the release is replaced rather than renumbered. Its description is
+          # rewritten either way, so correcting the wording does not need a new version.
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            published=$(mktemp -d)
+            gh release download "v$VERSION" --dir "$published" --pattern '*.nupkg' || true
+            if [ -n "$(ls -A "$published")" ] \
+              && [ "$(sha256sum "$published"/*.nupkg | cut -d' ' -f1)" = "$checksum" ]; then
+              echo "v$VERSION already carries this package; refreshing its description only."
+              gh release edit "v$VERSION" --title "$title" --notes-file /tmp/notes.md
+              exit 0
+            fi
+            echo "v$VERSION carries a different package; replacing it."
+            gh release delete "v$VERSION" --yes --cleanup-tag
+          fi
+
           gh release create "v$VERSION" "$package" \
-            --title "v$VERSION — Shaker BusinessTime Activities" \
+            --title "$title" \
             --notes-file /tmp/notes.md \
             --latest
