@@ -43,8 +43,9 @@ definition — from Studio, or from a JSON file several processes share.
    [`Shaker.BusinessTime.Activities.1.0.0.nupkg`](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg)
    and put it in a folder — a network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
-3. Find **Shaker.BusinessTime.Activities** under that source and install it.
+3. Find **Shaker BusinessTime Activities** under that source and install it.
 
+That is the name Studio shows; `Shaker.BusinessTime.Activities` is the package id a feed lists it under.
 The activities appear under **Business Time** in the panel. To publish to Orchestrator instead, upload the
 same file to a tenant feed.
 
@@ -579,7 +580,7 @@ To install it:
 
 1. Copy the `.nupkg` into a folder — a network share works well for a team.
 2. In Studio, **Manage Packages → Settings**, add that folder as a user-defined package source.
-3. Find **Shaker.BusinessTime.Activities** under that source and install it.
+3. Find **Shaker BusinessTime Activities** under that source and install it.
 
 To publish it to Orchestrator instead, upload the same file to a tenant feed.
 

@@ -4,16 +4,18 @@ The activity package, built and checked in so it can be installed into Studio wi
 
 | | |
 | --- | --- |
+| Name in Studio | Shaker BusinessTime Activities |
 | File | `Shaker.BusinessTime.Activities.1.0.0.nupkg` |
 | Version | 1.0.0 |
-| Built from | `72ef77562ac5c1515eb97c9545f2f36c9d9c9545` |
-| SHA-256 | `db4433a727add2b5e5d5921606ad4f389fa036fb43ce692b5425639cab9c3ea7` |
+| Built from | `b91df2e785a0a6229ccb0222588d3fda1038b6e3` |
+| SHA-256 | `d184833f0ae08a9ecd6e82f73e9345281441ec903b8ce1567dbe8b42c8ce5541` |
 
 ## Installing it into Studio
 
 1. Copy `Shaker.BusinessTime.Activities.1.0.0.nupkg` into a folder. A network share works well for a team.
 2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
-3. Find **Shaker.BusinessTime.Activities** under that source and install it.
+3. Find **Shaker BusinessTime Activities** under that source and install it — that is the name Studio
+   shows for the package id `Shaker.BusinessTime.Activities`.
 
 To publish it to Orchestrator instead, upload the same file to a tenant feed.
 
@@ -35,11 +37,15 @@ lib/net461/    BusinessTime.Activities.dll         the activities
                BusinessTime.Activities.Design.dll  the Studio designers, design time only
                BusinessTime.Core.dll               the calendar engine
 lib/net6.0/    BusinessTime.Activities.dll         the activities
+               BusinessTime.Activities.Design.dll  the Studio designers, design time only
+               BusinessTime.Activities.Wizard.dll  the Business Calendar editor in the ribbon
                BusinessTime.Core.dll               the calendar engine
+               calendar.png                        the ribbon icon, named by path
 ```
 
-`net461` covers Windows-legacy projects, `net6.0` covers Windows and cross-platform ones. The designers are
-Windows-only and design-time only, so they ship with the `net461` assets and a robot never loads them.
+`net461` covers Windows-legacy projects, `net6.0` covers Windows and cross-platform ones. Each set carries
+the designers for the Studio that reads it — a .NET Framework Studio the `net461` ones, a modern Studio the
+`net6.0` ones. Both are design time only; a robot loads neither.
 
 ## Rebuilding it
 

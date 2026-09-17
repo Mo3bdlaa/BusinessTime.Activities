@@ -75,6 +75,15 @@ jobs:
           # Studio and the Robot provide the workflow runtime. Depending on it here would install a second
           # copy beside the host's, which breaks loading System.Activities in a Windows project.
           nuspec=$(unzip -p "$package" "*.nuspec")
+
+          # The name Studio's package manager shows. The id stays dotted for the feed; this is what a
+          # person reads, so a build that loses it would be installed under a name nobody chose.
+          if ! grep -q "<title>Shaker BusinessTime Activities</title>" <<<"$nuspec"; then
+            echo "::error::The package must be titled 'Shaker BusinessTime Activities'"
+            echo "$nuspec"
+            exit 1
+          fi
+
           if grep -q "UiPath.Workflow" <<<"$nuspec"; then
             echo "::error::The package must not depend on UiPath.Workflow; the host provides the workflow runtime"
             echo "$nuspec"
@@ -119,15 +128,26 @@ jobs:
         run: |
           set -euo pipefail
 
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "v$VERSION is already released; nothing to do."
-            exit 0
-          fi
-
           # The package checked in under packages/ is the one whose checksum the documentation quotes, so
           # that is the file the release carries rather than a fresh build of the same source.
           package=$(ls packages/*."$VERSION".nupkg)
-          echo "Releasing $package"
+          checksum=$(sha256sum "$package" | cut -d' ' -f1)
+          echo "Releasing $package ($checksum)"
+
+          # A version already released is left alone, unless the file checked in is no longer the file
+          # published under it: a release carrying a stale package is worse than no release, and the
+          # version is what people quote, so the release is replaced rather than renumbered.
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            published=$(mktemp -d)
+            gh release download "v$VERSION" --dir "$published" --pattern '*.nupkg' || true
+            if [ -n "$(ls -A "$published")" ] \
+              && [ "$(sha256sum "$published"/*.nupkg | cut -d' ' -f1)" = "$checksum" ]; then
+              echo "v$VERSION already carries this package; nothing to do."
+              exit 0
+            fi
+            echo "v$VERSION carries a different package; replacing it."
+            gh release delete "v$VERSION" --yes --cleanup-tag
+          fi
 
           cat > /tmp/notes.md <<'NOTES'
           Working-hours arithmetic for UiPath. Adding eight hours to Friday afternoon gives you Monday, not Saturday.
@@ -158,6 +178,6 @@ jobs:
           NOTES
 
           gh release create "v$VERSION" "$package" \
-            --title "v$VERSION — Business Time Activities" \
+            --title "v$VERSION — Shaker BusinessTime Activities" \
             --notes-file /tmp/notes.md \
             --latest

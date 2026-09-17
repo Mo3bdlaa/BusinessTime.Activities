@@ -5,7 +5,11 @@
     <RootNamespace>BusinessTime.Activities</RootNamespace>
     <AssemblyName>BusinessTime.Activities</AssemblyName>
     <PackageId>Shaker.BusinessTime.Activities</PackageId>
-    <Title>Business Time Activities</Title>
+    <!--
+      What Studio's package manager and the Marketplace listing show. The id has to be dotted to stay
+      unique on a feed; the name a person reads does not, so it is spelled out here.
+    -->
+    <Title>Shaker BusinessTime Activities</Title>
     <Description>UiPath activities for working-hours arithmetic: add and subtract business days and hours, measure business time between two moments, and describe a working week, its holidays and its exceptions in one shared calendar.</Description>
     <PackageTags>UiPath;RPA;activities;business-days;working-hours;calendar;sla</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
