@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <LangVersion>9.0</LangVersion>
-    <Version>1.1.0</Version>
-    <Authors>Mo3bdlaa</Authors>
-    <Company>Mo3bdlaa</Company>
+    <Version>1.1.1</Version>
+    <Authors>Mohamed Shaker</Authors>
+    <Company>Mohamed Shaker</Company>
     <Product>BusinessTime.Activities</Product>
-    <Copyright>Copyright (c) Mo3bdlaa</Copyright>
+    <Copyright>Copyright (c) Mohamed Shaker</Copyright>
     <PackageProjectUrl>https://github.com/Mo3bdlaa/BusinessTime.Activities</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Mo3bdlaa/BusinessTime.Activities</RepositoryUrl>
     <NeutralLanguage>en-US</NeutralLanguage>
