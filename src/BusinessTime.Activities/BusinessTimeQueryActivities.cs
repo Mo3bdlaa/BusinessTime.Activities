@@ -34,6 +34,7 @@ namespace BusinessTime.Activities
     /// This is the activity to use for service levels: the answer is the time the team actually had, not the
     /// wall clock time, so a ticket raised on Friday afternoon is not penalised for the weekend.
     /// </remarks>
+    [Category("Business Time")]
     [DisplayName("Get Business Time Between")]
     [Description("Measures the working time between two moments, ignoring closed hours, weekends and holidays.")]
     public sealed class GetBusinessTimeBetween : BusinessTimeActivity<TimeSpan>
@@ -89,6 +90,7 @@ namespace BusinessTime.Activities
 
     /// <summary>Reports whether a moment falls inside working hours.</summary>
     /// <remarks>The instant a shift ends is not working time, so 17:00 on a 09:00-17:00 day is false.</remarks>
+    [Category("Business Time")]
     [DisplayName("Is Business Time")]
     [Description("Reports whether a moment falls inside working hours, and whether its date is a working day at all.")]
     public sealed class IsBusinessTime : BusinessTimeActivity<bool>
@@ -135,6 +137,7 @@ namespace BusinessTime.Activities
     /// Use it before starting a countdown, so that a request received at the weekend is treated as arriving
     /// when the office next opens.
     /// </remarks>
+    [Category("Business Time.Windows")]
     [DisplayName("Snap To Business Time")]
     [Description("Moves a moment outside working hours to the next, or previous, working moment.")]
     public sealed class SnapToBusinessTime : BusinessTimeActivity<DateTime>
@@ -174,6 +177,7 @@ namespace BusinessTime.Activities
     }
 
     /// <summary>Describes one date: whether it is worked, when it opens and closes, and how long it lasts.</summary>
+    [Category("Business Time.Days")]
     [DisplayName("Get Business Day Info")]
     [Description("Reports whether a date is a working day, when it opens and closes, and how much working time it holds.")]
     public sealed class GetBusinessDayInfo : BusinessTimeActivity<bool>
@@ -236,6 +240,7 @@ namespace BusinessTime.Activities
     }
 
     /// <summary>Counts the working days between two dates, both included.</summary>
+    [Category("Business Time.Days")]
     [DisplayName("Count Business Days")]
     [Description("Counts the working days between two dates, both included.")]
     public sealed class CountBusinessDays : BusinessTimeActivity<int>
@@ -266,6 +271,7 @@ namespace BusinessTime.Activities
     /// Lists the working windows inside a period, which is what a scheduler needs in order to place work
     /// into the hours that are actually available.
     /// </summary>
+    [Category("Business Time.Windows")]
     [DisplayName("Get Working Intervals")]
     [Description("Lists the working windows inside a period, clipped to that period.")]
     public sealed class GetWorkingIntervals : BusinessTimeActivity<IList<BusinessTimeInterval>>
@@ -315,6 +321,7 @@ namespace BusinessTime.Activities
     /// The answer is when work actually begins on that day, not midnight, and it follows the day's own
     /// hours: a day with exceptional hours opens when those hours say it does.
     /// </remarks>
+    [Category("Business Time.Days")]
     [DisplayName("Get Next Business Day")]
     [Description("Finds the next, or previous, working day and reports the moment work starts on it.")]
     public sealed class GetNextBusinessDay : BusinessTimeActivity<DateTime>

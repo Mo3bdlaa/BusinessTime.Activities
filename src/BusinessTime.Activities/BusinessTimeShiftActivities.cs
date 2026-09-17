@@ -117,6 +117,7 @@ namespace BusinessTime.Activities
     /// On a Monday-Friday 09:00-17:00 calendar, Friday 14:00 plus eight business hours is Monday 14:00: three
     /// hours are spent on Friday afternoon and the remaining five on Monday morning.
     /// </remarks>
+    [Category("Business Time")]
     [DisplayName("Add Business Time")]
     [Description("Moves a date forward by a number of business days, hours and minutes, skipping closed hours, weekends and holidays.")]
     public sealed class AddBusinessTime : BusinessTimeShiftActivity
@@ -133,6 +134,7 @@ namespace BusinessTime.Activities
     /// Useful for working out when something had to start: a task that needs four business hours and is due
     /// Monday 11:00 has to begin on the previous Friday at 15:00.
     /// </remarks>
+    [Category("Business Time")]
     [DisplayName("Subtract Business Time")]
     [Description("Moves a date backward by a number of business days, hours and minutes, skipping closed hours, weekends and holidays.")]
     public sealed class SubtractBusinessTime : BusinessTimeShiftActivity

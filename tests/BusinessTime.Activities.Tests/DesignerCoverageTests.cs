@@ -163,6 +163,37 @@ namespace BusinessTime.Activities.Tests
         }
 
         [Fact]
+        public void EveryActivityHasADesignerTypeOfItsOwn()
+        {
+            // The activities panel asks a designer type for its icon before any activity exists, so an icon
+            // set once a model item arrives leaves the panel blank. One type per activity is what carries it.
+            string source = DesignSource("ActivityDesigners.cs");
+
+            string[] missing = PublicActivities
+                .Select(type => type.Name)
+                .Where(name => !source.Contains("class " + name + "Designer"))
+                .OrderBy(name => name)
+                .ToArray();
+
+            Assert.True(missing.Length == 0, "These activities have no designer type: " + string.Join(", ", missing));
+        }
+
+        [Fact]
+        public void EveryActivitySaysWhereItBelongsInThePanel()
+        {
+            // Without this the panel falls back to the assembly name and buries everything a level down.
+            string[] missing = PublicActivities
+                .Where(type => !type.GetCustomAttributes(typeof(System.ComponentModel.CategoryAttribute), false)
+                                    .Cast<System.ComponentModel.CategoryAttribute>()
+                                    .Any(attribute => attribute.Category.StartsWith("Business Time")))
+                .Select(type => type.Name)
+                .OrderBy(name => name)
+                .ToArray();
+
+            Assert.True(missing.Length == 0, "These activities have no Business Time category: " + string.Join(", ", missing));
+        }
+
+        [Fact]
         public void TheRuntimeAssemblyDoesNotDragInWpf()
         {
             string[] windowsOnly = typeof(AddBusinessTime).Assembly

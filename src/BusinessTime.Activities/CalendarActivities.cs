@@ -14,6 +14,7 @@ namespace BusinessTime.Activities
     /// Drop this at the start of the process, keep the result in a variable, and point the other activities
     /// at that variable.
     /// </remarks>
+    [Category("Business Time")]
     [DisplayName("Create Business Calendar")]
     [Description("Builds a business calendar from a working week, a time zone and a list of holidays. Usually the first Business Time activity in a process.")]
     public sealed class CreateBusinessCalendar : CodeActivity<BusinessCalendar>
@@ -132,6 +133,7 @@ namespace BusinessTime.Activities
     /// Keeping the calendar in a file lets several processes share one definition, and lets the business
     /// change the holidays without anyone republishing a package.
     /// </remarks>
+    [Category("Business Time.Calendar")]
     [DisplayName("Load Business Calendar")]
     [Description("Loads a business calendar from a JSON file, or from JSON text held in an Orchestrator asset.")]
     public sealed class LoadBusinessCalendar : CodeActivity<BusinessCalendar>
@@ -178,6 +180,7 @@ namespace BusinessTime.Activities
     }
 
     /// <summary>Writes a calendar out to a JSON file.</summary>
+    [Category("Business Time.Calendar")]
     [DisplayName("Save Business Calendar")]
     [Description("Writes a business calendar to a JSON file, so it can be shared between processes or edited by the business.")]
     public sealed class SaveBusinessCalendar : CodeActivity

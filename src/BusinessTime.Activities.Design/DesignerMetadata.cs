@@ -104,9 +104,18 @@ namespace BusinessTime.Activities.Design
             }
         }
 
+        /// <summary>Points an activity at the designer that carries its icon and its card.</summary>
         private static void Attach(AttributeTableBuilder builder, Type activity)
         {
-            builder.AddCustomAttributes(activity, new DesignerAttribute(typeof(InlineActivityDesigner)));
+            Type designer = Type.GetType($"BusinessTime.Activities.Design.{activity.Name}Designer, {typeof(DesignerMetadata).Assembly.FullName}");
+
+            if (designer == null)
+            {
+                Trace("No designer type for " + activity.Name + ".");
+                return;
+            }
+
+            builder.AddCustomAttributes(activity, new DesignerAttribute(designer));
         }
     }
 }

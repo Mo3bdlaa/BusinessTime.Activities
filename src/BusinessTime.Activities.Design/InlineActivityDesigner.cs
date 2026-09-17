@@ -122,11 +122,20 @@ namespace BusinessTime.Activities.Design
             }
         };
 
+        private readonly string _activityName;
         private bool _built;
 
-        /// <summary>Creates the designer.</summary>
-        public InlineActivityDesigner()
+        /// <summary>
+        /// Creates the designer for one activity.
+        /// </summary>
+        /// <remarks>
+        /// The icon is set here rather than when the model item arrives, because the activities panel asks a
+        /// designer for its icon without ever giving it one: an icon set later leaves the panel blank.
+        /// </remarks>
+        protected InlineActivityDesigner(string activityName)
         {
+            _activityName = activityName;
+            Icon = Glyphs.For(activityName);
         }
 
         /// <summary>Builds the card once the designer knows which activity it belongs to.</summary>
@@ -142,8 +151,6 @@ namespace BusinessTime.Activities.Design
                 if (!(newItem is ModelItem item) || item.ItemType == null)
                     return;
 
-                // Each activity carries its own mark, so the pack is one family and still tells itself apart.
-                Icon = Glyphs.For(item.ItemType.Name);
                 DesignerMetadata.Trace("Drawing " + item.ItemType.Name + ".");
 
                 if (!Layouts.TryGetValue(item.ItemType.Name, out InlineField[] fields))

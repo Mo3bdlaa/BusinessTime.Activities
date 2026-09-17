@@ -156,7 +156,16 @@ A full example is in [`samples/support-desk-calendar.json`](samples/support-desk
 
 ## Activities
 
-Twelve activities, all under **Business Time** in the panel. Every calculating one takes the same two
+Twelve activities. The five used in almost every process sit directly under **Business Time** in the
+panel; the rest are grouped so the list stays short:
+
+| Group | Activities |
+| --- | --- |
+| **Business Time** | Create Business Calendar · Add Business Time · Subtract Business Time · Get Business Time Between · Is Business Time |
+| **Business Time › Calendar** | Load Business Calendar · Save Business Calendar |
+| **Business Time › Days** | Count Business Days · Get Next Business Day · Get Business Day Info |
+| **Business Time › Windows** | Snap To Business Time · Get Working Intervals |
+ Every calculating one takes the same two
 calendar properties, described once here rather than repeated in each table below:
 
 | Property | In/Out | Example | What it does |
@@ -486,7 +495,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/BusinessTime.Activities.1.0.0.nupkg`](packages/BusinessTime.Activities.1.0.0.nupkg), so Studio can
+[`packages/Shaker.BusinessTime.Activities.1.0.0.nupkg`](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -498,7 +507,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/Shaker.BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
@@ -509,7 +518,7 @@ To install it:
 
 1. Copy the `.nupkg` into a folder — a network share works well for a team.
 2. In Studio, **Manage Packages → Settings**, add that folder as a user-defined package source.
-3. Find **BusinessTime.Activities** under that source and install it.
+3. Find **Shaker.BusinessTime.Activities** under that source and install it.
 
 To publish it to Orchestrator instead, upload the same file to a tenant feed.
 
