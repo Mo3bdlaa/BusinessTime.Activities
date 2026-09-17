@@ -1,5 +1,6 @@
 using System;
 using System.Activities.Presentation.Metadata;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -19,6 +20,8 @@ namespace BusinessTime.Activities.Design
         /// </remarks>
         public void Register()
         {
+            Trace("Register() called.");
+
             try
             {
                 var builder = new AttributeTableBuilder();
@@ -41,10 +44,13 @@ namespace BusinessTime.Activities.Design
                 Attach(builder, typeof(SaveBusinessCalendar));
 
                 MetadataStore.AddAttributeTable(builder.CreateTable());
+
+                Trace($"Registered {Results.Count + 1} designers.");
             }
             catch (Exception exception)
             {
                 Debug.WriteLine("BusinessTime designers could not be registered: " + exception);
+                Trace("FAILED: " + exception);
             }
         }
 
@@ -75,6 +81,28 @@ namespace BusinessTime.Activities.Design
             [typeof(GetWorkingIntervals)] =
                 "The working windows inside the period, each with a Start, an End and a Duration."
         };
+
+        /// <summary>
+        /// Leaves a line in the temp folder saying whether Studio got this far.
+        /// </summary>
+        /// <remarks>
+        /// Whether a design assembly is loaded at all cannot be seen from outside Studio: nothing is shown
+        /// either way, and a designer that never runs looks exactly like one that runs and draws nothing.
+        /// This turns that into a file you can look at. It is design time only and costs a few bytes.
+        /// </remarks>
+        internal static void Trace(string message)
+        {
+            try
+            {
+                string path = Path.Combine(Path.GetTempPath(), "BusinessTime.designer.log");
+                string line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}  {message}  [{typeof(DesignerMetadata).Assembly.Location}]";
+                File.AppendAllText(path, line + Environment.NewLine);
+            }
+            catch (Exception)
+            {
+                // Diagnostics must never be the reason something fails.
+            }
+        }
 
         private static void Attach(AttributeTableBuilder builder, Type activity)
         {

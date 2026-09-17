@@ -144,6 +144,7 @@ namespace BusinessTime.Activities.Design
 
                 // Each activity carries its own mark, so the pack is one family and still tells itself apart.
                 Icon = Glyphs.For(item.ItemType.Name);
+                DesignerMetadata.Trace("Drawing " + item.ItemType.Name + ".");
 
                 if (!Layouts.TryGetValue(item.ItemType.Name, out InlineField[] fields))
                     return;
