@@ -1,37 +1,98 @@
-# BusinessTime.Activities
+# Shaker.BusinessTime.Activities
 
-Custom UiPath activities for arithmetic that respects working hours.
+[![Build](https://github.com/Mo3bdlaa/BusinessTime.Activities/actions/workflows/build.yml/badge.svg)](https://github.com/Mo3bdlaa/BusinessTime.Activities/actions/workflows/build.yml)
+[![Licence](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+[![Version](https://img.shields.io/badge/nuget-1.0.0-blue)](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg)
+[![Targets](https://img.shields.io/badge/UiPath-Windows%20%C2%B7%20Cross--platform%20%C2%B7%20Legacy-blue)](#designers-and-platforms)
 
-Adding "8 hours" to a timestamp with `DateTime.AddHours` gives you Saturday. This package gives you Monday
-afternoon, because it knows when the office is open:
+UiPath activities for date arithmetic that respects working hours.
 
-> On a Monday-Friday 09:00-17:00 calendar, **Friday 14:00 + 8 business hours = Monday 14:00** — three hours
-> are spent on Friday afternoon and the remaining five on Monday morning.
+`DateTime.AddHours(8)` on a Friday afternoon lands on Saturday, and a service level measured with
+`DateTime.Subtract` bills a team for the weekend. This package counts only the hours the office is actually
+open:
 
-The working week, its holidays and its exceptions are described once, in one place, and every activity reads
-that same definition.
+On a Monday-Friday, 09:00-17:00 week:
+
+| Question | Plain .NET | This package |
+| --- | --- | --- |
+| Friday 16:30 plus 4 hours | Friday 20:30 | **Monday 12:30** |
+| Friday 16:30 → Monday 10:15 | 2 days 17:45 | **1h 45m** of working time |
+| Is Sunday 10:00 open? | it has no idea | **False**, and it names the holiday if there is one |
+| Christmas Eve | an ordinary day | **a half day**, because you said so once |
+
+The working week, its holidays and its exceptions live in one calendar, and every activity reads that same
+definition — from Studio, or from a JSON file several processes share.
+
+## What is in the box
+
+- **Twelve activities** — add and subtract business time, measure the working time between two moments,
+  count business days, ask whether you are open, describe a day, snap an out-of-hours moment onto the
+  calendar, find the next working day, and list the working windows in a period.
+- **One calendar** covering several shifts a day, night shifts across midnight, holidays that repeat every
+  year, shutdown ranges, half days, time zones and daylight saving.
+- **A Business Calendar editor** in Studio's ribbon, for maintaining that calendar without editing JSON.
+- **Every Studio** — `net461` for Windows-legacy projects, `net6.0` for Windows and cross-platform ones,
+  with the engine and the designers inside the one package.
+- **266 tests**, including every figure quoted on this page.
+
+---
+
+## Install
+
+1. Download
+   [`Shaker.BusinessTime.Activities.1.0.0.nupkg`](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg)
+   and put it in a folder — a network share works well for a team.
+2. In Studio, open **Manage Packages → Settings** and add that folder as a user-defined package source.
+3. Find **Shaker.BusinessTime.Activities** under that source and install it.
+
+The activities appear under **Business Time** in the panel. To publish to Orchestrator instead, upload the
+same file to a tenant feed.
+
+## Quick start
+
+Three activities and you have a working answer.
+
+**1. Say what your working week is.** Drop **Create Business Calendar** at the start of the process:
+
+| Property | Value |
+| --- | --- |
+| Working week | `Mon-Fri 09:00-17:00` |
+| Time zone | `UTC_plus_01_Berlin`, or `MachineLocal` to follow each robot |
+| Result | `calendar` |
+
+**2. Ask it something.** Drop **Add Business Time** and point it at that variable:
+
+| Property | Value |
+| --- | --- |
+| Calendar | `calendar` |
+| Date | `ticket.Created` |
+| Hours | `4` |
+| Result | `dueAt` |
+
+**3. That is it.** A ticket raised Friday 16:30 is due **Monday 12:30**, not Friday 20:30.
+
+Nothing above is required, by the way: an activity with no calendar at all assumes Monday to Friday,
+09:00-17:00, in the robot's own time zone, so it does something sensible before it is configured.
 
 ---
 
 ## Contents
 
-- [Describing working time](#describing-working-time)
-  - [The schedule string](#the-schedule-string)
-  - [Time zones](#time-zones)
-  - [Holidays, shutdowns and half days](#holidays-shutdowns-and-half-days)
-  - [Calendar files](#calendar-files)
+- [Describing working time](#describing-working-time) — the calendar, in depth
+  - [The schedule string](#the-schedule-string) · [Time zones](#time-zones) · [Holidays and half days](#holidays-shutdowns-and-half-days) · [Calendar files](#calendar-files)
 - [Activities](#activities) — every property of every activity
   - [At a glance](#at-a-glance)
   - [Create](#create-business-calendar) · [Load](#load-business-calendar) · [Save](#save-business-calendar)
   - [Add](#add-business-time) · [Subtract](#subtract-business-time) · [Between](#get-business-time-between) · [Count](#count-business-days)
   - [Is Business Time](#is-business-time) · [Day Info](#get-business-day-info) · [Snap](#snap-to-business-time) · [Next Day](#get-next-business-day) · [Intervals](#get-working-intervals)
 - [How an activity finds its calendar](#how-an-activity-finds-its-calendar)
-- [Worked examples](#worked-examples)
-- [Rules the engine follows](#rules-the-engine-follows)
+- [Worked examples](#worked-examples) — service levels, countdowns, retries
+- [Rules the engine follows](#rules-the-engine-follows) — the cases implementations usually disagree on
+- [Designers and platforms](#designers-and-platforms)
 - [The calendar editor in Studio's ribbon](#the-calendar-editor-in-studios-ribbon)
-- [Building and installing](#building-and-installing)
+- [Building it yourself](#building-and-installing)
 - [Using the engine outside UiPath](#using-the-engine-outside-uipath)
-- [Licence](#licence)
+- [Repository layout](#repository-layout) · [Licence](#licence)
 
 ---
 
@@ -495,7 +556,7 @@ ships, and a build against anything higher fails to load in a real project.
 
 
 A built package is checked in at
-[`packages/Shaker.BusinessTime.Activities.1.0.2.nupkg`](packages/Shaker.BusinessTime.Activities.1.0.2.nupkg), so Studio can
+[`packages/Shaker.BusinessTime.Activities.1.0.0.nupkg`](packages/Shaker.BusinessTime.Activities.1.0.0.nupkg), so Studio can
 install it without building anything first — see [`packages/README.md`](packages/README.md) for the steps.
 Every push also builds it on CI and attaches it to the run.
 
@@ -507,7 +568,7 @@ dotnet test  BusinessTime.Activities.sln -c Release
 dotnet pack  src/BusinessTime.Activities/BusinessTime.Activities.csproj -c Release -o artifacts
 ```
 
-`artifacts/Shaker.BusinessTime.Activities.1.0.2.nupkg` is the activity package. It targets `net461` for Windows-legacy
+`artifacts/Shaker.BusinessTime.Activities.1.0.0.nupkg` is the activity package. It targets `net461` for Windows-legacy
 projects and `net6.0` for Windows and cross-platform ones, and both the engine and the designers travel
 inside it, so this one file is all Studio needs.
 
